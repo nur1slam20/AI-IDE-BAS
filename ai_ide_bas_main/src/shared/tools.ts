@@ -155,7 +155,7 @@ export interface SwitchModeToolUse extends ToolUse {
 
 export interface NewTaskToolUse extends ToolUse {
 	name: "new_task"
-	params: Partial<Pick<Record<ToolParamName, string>, "mode" | "message" | "todos">>
+	params: Partial<Pick<Record<ToolParamName, string>, "mode" | "message">>
 }
 
 export interface SearchAndReplaceToolUse extends ToolUse {

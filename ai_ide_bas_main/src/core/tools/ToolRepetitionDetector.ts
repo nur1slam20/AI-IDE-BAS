@@ -39,7 +39,7 @@ export class ToolRepetitionDetector {
 		if (this.previousToolCallJson === currentToolCallJson) {
 			this.consecutiveIdenticalToolCallCount++
 		} else {
-			this.consecutiveIdenticalToolCallCount = 0 // Reset to 0 for a new tool
+			this.consecutiveIdenticalToolCallCount = 1 // Start with 1 for the first occurrence
 			this.previousToolCallJson = currentToolCallJson
 		}
 

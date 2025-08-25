@@ -2,7 +2,6 @@ import React from "react"
 import type { Metadata } from "next"
 import { Inter } from "next/font/google"
 import Script from "next/script"
-import { SEO } from "@/lib/seo"
 
 import { Providers } from "@/components/providers"
 
@@ -13,14 +12,11 @@ import "./globals.css"
 const inter = Inter({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
-	metadataBase: new URL(SEO.url),
-	title: {
-		template: "%s | Roo Code",
-		default: SEO.title,
-	},
-	description: SEO.description,
+	title: "Roo Code – Your AI-Powered Dev Team in VS Code",
+	description:
+		"Roo Code puts an entire AI dev team right in your editor, outpacing closed tools with deep project-wide context, multi-step agentic coding, and unmatched developer-centric flexibility.",
 	alternates: {
-		canonical: SEO.url,
+		canonical: "https://roocode.com",
 	},
 	icons: {
 		icon: [
@@ -44,42 +40,6 @@ export const metadata: Metadata = {
 			},
 		],
 	},
-	openGraph: {
-		title: SEO.title,
-		description: SEO.description,
-		url: SEO.url,
-		siteName: SEO.name,
-		images: [
-			{
-				url: SEO.ogImage.url,
-				width: SEO.ogImage.width,
-				height: SEO.ogImage.height,
-				alt: SEO.ogImage.alt,
-			},
-		],
-		locale: SEO.locale,
-		type: "website",
-	},
-	twitter: {
-		card: SEO.twitterCard,
-		title: SEO.title,
-		description: SEO.description,
-		images: [SEO.ogImage.url],
-	},
-	robots: {
-		index: true,
-		follow: true,
-		googleBot: {
-			index: true,
-			follow: true,
-			"max-snippet": -1,
-			"max-image-preview": "large",
-			"max-video-preview": -1,
-		},
-	},
-	keywords: [...SEO.keywords],
-	applicationName: SEO.name,
-	category: SEO.category,
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
@@ -104,8 +64,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 					`}
 				</Script>
 				<div itemScope itemType="https://schema.org/WebSite">
-					<link itemProp="url" href={SEO.url} />
-					<meta itemProp="name" content={SEO.name} />
+					<link itemProp="url" href="https://roocode.com" />
+					<meta itemProp="name" content="Roo Code" />
 				</div>
 				<Providers>
 					<Shell>{children}</Shell>

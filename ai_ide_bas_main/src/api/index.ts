@@ -8,11 +8,11 @@ import {
 	GlamaHandler,
 	AnthropicHandler,
 	AwsBedrockHandler,
-	CerebrasHandler,
 	OpenRouterHandler,
 	VertexHandler,
 	AnthropicVertexHandler,
 	OpenAiHandler,
+	OllamaHandler,
 	LmStudioHandler,
 	GeminiHandler,
 	OpenAiNativeHandler,
@@ -30,15 +30,7 @@ import {
 	ChutesHandler,
 	LiteLLMHandler,
 	ClaudeCodeHandler,
-	SambaNovaHandler,
-	IOIntelligenceHandler,
-	DoubaoHandler,
-	ZAiHandler,
-	FireworksHandler,
-	RooHandler,
-	FeatherlessHandler,
 } from "./providers"
-import { NativeOllamaHandler } from "./providers/native-ollama"
 
 export interface SingleCompletionHandler {
 	completePrompt(prompt: string): Promise<string>
@@ -47,13 +39,6 @@ export interface SingleCompletionHandler {
 export interface ApiHandlerCreateMessageMetadata {
 	mode?: string
 	taskId: string
-	previousResponseId?: string
-	/**
-	 * When true, the provider must NOT fall back to internal continuity state
-	 * (e.g., lastResponseId) if previousResponseId is absent.
-	 * Used to enforce "skip once" after a condense operation.
-	 */
-	suppressPreviousResponseId?: boolean
 }
 
 export interface ApiHandler {
@@ -97,7 +82,7 @@ export function buildApiHandler(configuration: ProviderSettings): ApiHandler {
 		case "openai":
 			return new OpenAiHandler(options)
 		case "ollama":
-			return new NativeOllamaHandler(options)
+			return new OllamaHandler(options)
 		case "lmstudio":
 			return new LmStudioHandler(options)
 		case "gemini":
@@ -106,8 +91,6 @@ export function buildApiHandler(configuration: ProviderSettings): ApiHandler {
 			return new OpenAiNativeHandler(options)
 		case "deepseek":
 			return new DeepSeekHandler(options)
-		case "doubao":
-			return new DoubaoHandler(options)
 		case "moonshot":
 			return new MoonshotHandler(options)
 		case "vscode-lm":
@@ -132,22 +115,6 @@ export function buildApiHandler(configuration: ProviderSettings): ApiHandler {
 			return new ChutesHandler(options)
 		case "litellm":
 			return new LiteLLMHandler(options)
-		case "cerebras":
-			return new CerebrasHandler(options)
-		case "sambanova":
-			return new SambaNovaHandler(options)
-		case "zai":
-			return new ZAiHandler(options)
-		case "fireworks":
-			return new FireworksHandler(options)
-		case "io-intelligence":
-			return new IOIntelligenceHandler(options)
-		case "roo":
-			// Never throw exceptions from provider constructors
-			// The provider-proxy server will handle authentication and return appropriate error codes
-			return new RooHandler(options)
-		case "featherless":
-			return new FeatherlessHandler(options)
 		default:
 			apiProvider satisfies "gemini-cli" | undefined
 			return new AnthropicHandler(options)

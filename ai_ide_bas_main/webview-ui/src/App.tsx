@@ -12,6 +12,7 @@ import { TelemetryEventName } from "@roo-code/types"
 import { initializeSourceMaps, exposeSourceMapsForDebugging } from "./utils/sourceMapInitializer"
 import { ExtensionStateContextProvider, useExtensionState } from "./context/ExtensionStateContext"
 import ChatView, { ChatViewRef } from "./components/chat/ChatView"
+import FilesView from "./components/files/FilesView"
 import HistoryView from "./components/history/HistoryView"
 import SettingsView, { SettingsViewRef } from "./components/settings/SettingsView"
 import WelcomeView from "./components/welcome/WelcomeView"
@@ -26,7 +27,7 @@ import { useAddNonInteractiveClickListener } from "./components/ui/hooks/useNonI
 import { TooltipProvider } from "./components/ui/tooltip"
 import { STANDARD_TOOLTIP_DELAY } from "./components/ui/standard-tooltip"
 
-type Tab = "settings" | "history" | "mcp" | "modes" | "chat" | "marketplace" | "account"
+type Tab = "settings" | "history" | "mcp" | "modes" | "chat" | "marketplace" | "account" | "files"
 
 interface HumanRelayDialogState {
 	isOpen: boolean
@@ -59,6 +60,7 @@ const tabsByMessageAction: Partial<Record<NonNullable<ExtensionMessage["action"]
 	historyButtonClicked: "history",
 	marketplaceButtonClicked: "marketplace",
 	accountButtonClicked: "account",
+	filesButtonClicked: "files",
 }
 
 const App = () => {
@@ -105,11 +107,8 @@ const App = () => {
 
 	const switchTab = useCallback(
 		(newTab: Tab) => {
-			// Only check MDM compliance if mdmCompliant is explicitly false (meaning there's an MDM policy and user is non-compliant)
-			// If mdmCompliant is undefined or true, allow tab switching
+			// Check MDM compliance before allowing tab switching
 			if (mdmCompliant === false && newTab !== "account") {
-				// Notify the user that authentication is required by their organization
-				vscode.postMessage({ type: "showMdmAuthRequiredNotification" })
 				return
 			}
 
@@ -194,7 +193,10 @@ const App = () => {
 	}, [telemetrySetting, telemetryKey, machineId, didHydrateState])
 
 	// Tell the extension that we are ready to receive messages.
-	useEffect(() => vscode.postMessage({ type: "webviewDidLaunch" }), [])
+	useEffect(() => {
+		vscode.postMessage({ type: "webviewDidLaunch" })
+		vscode.postMessage({ type: "files:status" })
+	}, [])
 
 	// Initialize source map support for better error reporting
 	useEffect(() => {
@@ -249,6 +251,7 @@ const App = () => {
 					targetTab={currentMarketplaceTab as "mcp" | "mode" | undefined}
 				/>
 			)}
+			{tab === "files" && <FilesView />}
 			{tab === "account" && (
 				<AccountView
 					userInfo={cloudUserInfo}

@@ -1011,14 +1011,8 @@ const ChatTextArea = forwardRef<HTMLTextAreaElement, ChatTextAreaProps>(
 						"font-vscode-font-family",
 						"text-vscode-editor-font-size",
 						"leading-vscode-editor-line-height",
-						isFocused
-							? "border border-vscode-focusBorder outline outline-vscode-focusBorder"
-							: isDraggingOver
-								? "border-2 border-dashed border-vscode-focusBorder"
-								: "border border-transparent",
-						isEditMode ? "pt-1.5 pb-10 px-2" : "py-1.5 px-2",
-						"px-[8px]",
-						"pr-9",
+						"py-2",
+						"px-[9px]",
 						"z-10",
 						"forced-color-adjust-none",
 					)}

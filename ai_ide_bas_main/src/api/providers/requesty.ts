@@ -15,7 +15,6 @@ import { DEFAULT_HEADERS } from "./constants"
 import { getModels } from "./fetchers/modelCache"
 import { BaseProvider } from "./base-provider"
 import type { SingleCompletionHandler, ApiHandlerCreateMessageMetadata } from "../index"
-import { toRequestyServiceUrl } from "../../shared/utils/requesty"
 
 // Requesty usage includes an extra field for Anthropic use cases.
 // Safely cast the prompt token details section to the appropriate structure.
@@ -41,23 +40,21 @@ export class RequestyHandler extends BaseProvider implements SingleCompletionHan
 	protected options: ApiHandlerOptions
 	protected models: ModelRecord = {}
 	private client: OpenAI
-	private baseURL: string
 
 	constructor(options: ApiHandlerOptions) {
 		super()
 
 		this.options = options
-		this.baseURL = toRequestyServiceUrl(options.requestyBaseUrl)
 
 		this.client = new OpenAI({
-			baseURL: this.baseURL,
+			baseURL: "https://router.requesty.ai/v1",
 			apiKey: this.options.requestyApiKey ?? "not-provided",
 			defaultHeaders: DEFAULT_HEADERS,
 		})
 	}
 
 	public async fetchModel() {
-		this.models = await getModels({ provider: "requesty", baseUrl: this.baseURL })
+		this.models = await getModels({ provider: "requesty" })
 		return this.getModel()
 	}
 
@@ -119,7 +116,7 @@ export class RequestyHandler extends BaseProvider implements SingleCompletionHan
 			model,
 			max_tokens,
 			temperature,
-			...(reasoning_effort && reasoning_effort !== "minimal" && { reasoning_effort }),
+			...(reasoning_effort && { reasoning_effort }),
 			...(thinking && { thinking }),
 			stream: true,
 			stream_options: { include_usage: true },

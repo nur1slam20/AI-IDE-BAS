@@ -53,6 +53,7 @@ describe("TaskHeader", () => {
 		contextTokens: 200,
 		buttonsDisabled: false,
 		handleCondenseContext: vi.fn(),
+		onClose: vi.fn(),
 	}
 
 	const queryClient = new QueryClient()
@@ -90,13 +91,9 @@ describe("TaskHeader", () => {
 		expect(screen.queryByText(/\$/)).not.toBeInTheDocument()
 	})
 
-	it("should render the condense context button when expanded", () => {
+	it("should render the condense context button", () => {
 		renderTaskHeader()
-		// First click to expand the task header
-		const taskHeader = screen.getByText("Test task")
-		fireEvent.click(taskHeader)
-
-		// Now find the condense button in the expanded state
+		// Find the button that contains the FoldVertical icon
 		const buttons = screen.getAllByRole("button")
 		const condenseButton = buttons.find((button) => button.querySelector("svg.lucide-fold-vertical"))
 		expect(condenseButton).toBeDefined()
@@ -106,11 +103,6 @@ describe("TaskHeader", () => {
 	it("should call handleCondenseContext when condense context button is clicked", () => {
 		const handleCondenseContext = vi.fn()
 		renderTaskHeader({ handleCondenseContext })
-
-		// First click to expand the task header
-		const taskHeader = screen.getByText("Test task")
-		fireEvent.click(taskHeader)
-
 		// Find the button that contains the FoldVertical icon
 		const buttons = screen.getAllByRole("button")
 		const condenseButton = buttons.find((button) => button.querySelector("svg.lucide-fold-vertical"))
@@ -122,11 +114,6 @@ describe("TaskHeader", () => {
 	it("should disable the condense context button when buttonsDisabled is true", () => {
 		const handleCondenseContext = vi.fn()
 		renderTaskHeader({ buttonsDisabled: true, handleCondenseContext })
-
-		// First click to expand the task header
-		const taskHeader = screen.getByText("Test task")
-		fireEvent.click(taskHeader)
-
 		// Find the button that contains the FoldVertical icon
 		const buttons = screen.getAllByRole("button")
 		const condenseButton = buttons.find((button) => button.querySelector("svg.lucide-fold-vertical"))

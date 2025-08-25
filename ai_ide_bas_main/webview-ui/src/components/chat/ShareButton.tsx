@@ -1,10 +1,8 @@
 import { useState, useEffect, useRef } from "react"
 import { useTranslation } from "react-i18next"
-import { SquareArrowOutUpRightIcon } from "lucide-react"
 
-import { type HistoryItem, TelemetryEventName } from "@roo-code/types"
-
-import type { ShareVisibility } from "@roo/cloud"
+import type { HistoryItem, ShareVisibility } from "@roo-code/types"
+import { TelemetryEventName } from "@roo-code/types"
 
 import { vscode } from "@/utils/vscode"
 import { telemetryClient } from "@/utils/TelemetryClient"
@@ -28,10 +26,9 @@ import {
 interface ShareButtonProps {
 	item?: HistoryItem
 	disabled?: boolean
-	showLabel?: boolean
 }
 
-export const ShareButton = ({ item, disabled = false, showLabel = false }: ShareButtonProps) => {
+export const ShareButton = ({ item, disabled = false }: ShareButtonProps) => {
 	const [shareDropdownOpen, setShareDropdownOpen] = useState(false)
 	const [connectModalOpen, setConnectModalOpen] = useState(false)
 	const [shareSuccess, setShareSuccess] = useState<{ visibility: ShareVisibility; url: string } | null>(null)
@@ -158,21 +155,14 @@ export const ShareButton = ({ item, disabled = false, showLabel = false }: Share
 						<PopoverTrigger asChild>
 							<Button
 								variant="ghost"
-								size={showLabel ? "sm" : "icon"}
+								size="icon"
 								disabled={disabled || shareButtonState.disabled}
-								className={
-									showLabel
-										? "h-7 px-2 hover:bg-vscode-toolbar-hoverBackground"
-										: "h-7 w-7 p-1.5 hover:bg-vscode-toolbar-hoverBackground"
-								}
-								onClick={handleShareButtonClick}
-								data-testid="share-button">
-								<SquareArrowOutUpRightIcon />
-								{showLabel && <span className="ml-0">{t("chat:task.share")}</span>}
+								className="h-7 w-7 p-1.5 hover:bg-vscode-toolbar-hoverBackground"
+								onClick={handleShareButtonClick}>
+								<span className="codicon codicon-link"></span>
 							</Button>
 						</PopoverTrigger>
 					</StandardTooltip>
-
 					<PopoverContent className="w-56 p-0" align="start">
 						{shareSuccess ? (
 							<div className="p-3">
@@ -227,17 +217,11 @@ export const ShareButton = ({ item, disabled = false, showLabel = false }: Share
 				<StandardTooltip content={shareButtonState.title}>
 					<Button
 						variant="ghost"
-						size={showLabel ? "sm" : "icon"}
+						size="icon"
 						disabled={disabled || shareButtonState.disabled}
-						className={
-							showLabel
-								? "h-7 px-2 hover:bg-vscode-toolbar-hoverBackground"
-								: "h-7 w-7 p-1.5 hover:bg-vscode-toolbar-hoverBackground"
-						}
-						onClick={handleShareButtonClick}
-						data-testid="share-button">
-						<SquareArrowOutUpRightIcon />
-						{showLabel && <span className="ml-1">{t("chat:task.share")}</span>}
+						className="h-7 w-7 p-1.5 hover:bg-vscode-toolbar-hoverBackground"
+						onClick={handleShareButtonClick}>
+						<span className="codicon codicon-link"></span>
 					</Button>
 				</StandardTooltip>
 			)}

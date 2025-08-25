@@ -23,7 +23,6 @@ import { getModelParams } from "../transform/model-params"
 import { DEFAULT_HEADERS } from "./constants"
 import { BaseProvider } from "./base-provider"
 import type { SingleCompletionHandler, ApiHandlerCreateMessageMetadata } from "../index"
-import { getApiRequestTimeout } from "./utils/timeout-config"
 
 // TODO: Rename this to OpenAICompatibleHandler. Also, I think the
 // `OpenAINativeHandler` can subclass from this, since it's obviously
@@ -47,8 +46,6 @@ export class OpenAiHandler extends BaseProvider implements SingleCompletionHandl
 			...(this.options.openAiHeaders || {}),
 		}
 
-		const timeout = getApiRequestTimeout()
-
 		if (isAzureAiInference) {
 			// Azure AI Inference Service (e.g., for DeepSeek) uses a different path structure
 			this.client = new OpenAI({
@@ -56,7 +53,6 @@ export class OpenAiHandler extends BaseProvider implements SingleCompletionHandl
 				apiKey,
 				defaultHeaders: headers,
 				defaultQuery: { "api-version": this.options.azureApiVersion || "2024-05-01-preview" },
-				timeout,
 			})
 		} else if (isAzureOpenAi) {
 			// Azure API shape slightly differs from the core API shape:
@@ -66,14 +62,12 @@ export class OpenAiHandler extends BaseProvider implements SingleCompletionHandl
 				apiKey,
 				apiVersion: this.options.azureApiVersion || azureOpenAiDefaultApiVersion,
 				defaultHeaders: headers,
-				timeout,
 			})
 		} else {
 			this.client = new OpenAI({
 				baseURL,
 				apiKey,
 				defaultHeaders: headers,
-				timeout,
 			})
 		}
 	}
@@ -157,18 +151,11 @@ export class OpenAiHandler extends BaseProvider implements SingleCompletionHandl
 
 			const requestOptions: OpenAI.Chat.Completions.ChatCompletionCreateParamsStreaming = {
 				model: modelId,
+				temperature: this.options.modelTemperature ?? (deepseekReasoner ? DEEP_SEEK_DEFAULT_TEMPERATURE : 0),
 				messages: convertedMessages,
 				stream: true as const,
 				...(isGrokXAI ? {} : { stream_options: { include_usage: true } }),
 				...(reasoning && reasoning),
-			}
-
-			// Only include temperature if explicitly set
-			if (this.options.modelTemperature !== undefined) {
-				requestOptions.temperature = this.options.modelTemperature
-			} else if (deepseekReasoner) {
-				// DeepSeek Reasoner has a specific default temperature
-				requestOptions.temperature = DEEP_SEEK_DEFAULT_TEMPERATURE
 			}
 
 			// Add max_tokens if needed
@@ -318,7 +305,7 @@ export class OpenAiHandler extends BaseProvider implements SingleCompletionHandl
 				],
 				stream: true,
 				...(isGrokXAI ? {} : { stream_options: { include_usage: true } }),
-				reasoning_effort: modelInfo.reasoningEffort as "low" | "medium" | "high" | undefined,
+				reasoning_effort: modelInfo.reasoningEffort,
 				temperature: undefined,
 			}
 
@@ -343,7 +330,7 @@ export class OpenAiHandler extends BaseProvider implements SingleCompletionHandl
 					},
 					...convertToOpenAiMessages(messages),
 				],
-				reasoning_effort: modelInfo.reasoningEffort as "low" | "medium" | "high" | undefined,
+				reasoning_effort: modelInfo.reasoningEffort,
 				temperature: undefined,
 			}
 
@@ -429,10 +416,7 @@ export async function getOpenAiModels(baseUrl?: string, apiKey?: string, openAiH
 			return []
 		}
 
-		// Trim whitespace from baseUrl to handle cases where users accidentally include spaces
-		const trimmedBaseUrl = baseUrl.trim()
-
-		if (!URL.canParse(trimmedBaseUrl)) {
+		if (!URL.canParse(baseUrl)) {
 			return []
 		}
 
@@ -450,7 +434,7 @@ export async function getOpenAiModels(baseUrl?: string, apiKey?: string, openAiH
 			config["headers"] = headers
 		}
 
-		const response = await axios.get(`${trimmedBaseUrl}/models`, config)
+		const response = await axios.get(`${baseUrl}/models`, config)
 		const modelsArray = response.data?.data?.map((model: any) => model.id) || []
 		return [...new Set<string>(modelsArray)]
 	} catch (error) {

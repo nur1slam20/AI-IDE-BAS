@@ -39,10 +39,10 @@ vi.mock("react-i18next", () => ({
 				"chat:task.sharePublicly": "Share Publicly",
 				"chat:task.sharePubliclyDescription": "Anyone with the link can access",
 				"chat:task.connectToCloud": "Connect to Cloud",
-				"chat:task.connectToCloudDescription": "Sign in to Roo Code Cloud to share tasks",
+				"chat:task.connectToCloudDescription": "Sign in to AI IDE BAS Cloud to share tasks",
 				"chat:task.sharingDisabledByOrganization": "Sharing disabled by organization",
-				"account:cloudBenefitsTitle": "Connect to Roo Code Cloud",
-				"account:cloudBenefitsSubtitle": "Sign in to Roo Code Cloud to share tasks",
+				"account:cloudBenefitsTitle": "Connect to AI IDE BAS Cloud",
+				"account:cloudBenefitsSubtitle": "Sign in to AI IDE BAS Cloud to share tasks",
 				"account:cloudBenefitHistory": "Access your task history from anywhere",
 				"account:cloudBenefitSharing": "Share tasks with your team",
 				"account:cloudBenefitMetrics": "Track usage and costs",
@@ -89,17 +89,19 @@ describe("TaskActions", () => {
 		it("renders share button when item has id", () => {
 			render(<TaskActions item={mockItem} buttonsDisabled={false} />)
 
-			// ShareButton now uses data-testid for reliable testing
-			const shareButton = screen.getByTestId("share-button")
+			// Find button by its icon class
+			const buttons = screen.getAllByRole("button")
+			const shareButton = buttons.find((btn) => btn.querySelector(".codicon-link"))
 			expect(shareButton).toBeInTheDocument()
 		})
 
 		it("does not render share button when item has no id", () => {
 			render(<TaskActions item={undefined} buttonsDisabled={false} />)
 
-			// ShareButton returns null when no item ID
-			const shareButton = screen.queryByTestId("share-button")
-			expect(shareButton).toBeNull()
+			// Find button by its icon class
+			const buttons = screen.queryAllByRole("button")
+			const shareButton = buttons.find((btn) => btn.querySelector(".codicon-link"))
+			expect(shareButton).not.toBeDefined()
 		})
 
 		it("renders share button even when not authenticated", () => {
@@ -110,8 +112,9 @@ describe("TaskActions", () => {
 
 			render(<TaskActions item={mockItem} buttonsDisabled={false} />)
 
-			// ShareButton should still render when not authenticated
-			const shareButton = screen.getByTestId("share-button")
+			// Find button by its icon class
+			const buttons = screen.getAllByRole("button")
+			const shareButton = buttons.find((btn) => btn.querySelector(".codicon-link"))
 			expect(shareButton).toBeInTheDocument()
 		})
 	})
@@ -120,9 +123,11 @@ describe("TaskActions", () => {
 		it("shows organization and public share options when authenticated and sharing enabled", () => {
 			render(<TaskActions item={mockItem} buttonsDisabled={false} />)
 
-			// Find share button by its test ID and click it
-			const shareButton = screen.getByTestId("share-button")
-			fireEvent.click(shareButton)
+			// Find button by its icon class
+			const buttons = screen.getAllByRole("button")
+			const shareButton = buttons.find((btn) => btn.querySelector(".codicon-link"))
+			expect(shareButton).toBeDefined()
+			fireEvent.click(shareButton!)
 
 			expect(screen.getByText("Share with Organization")).toBeInTheDocument()
 			expect(screen.getByText("Share Publicly")).toBeInTheDocument()
@@ -131,9 +136,11 @@ describe("TaskActions", () => {
 		it("sends shareCurrentTask message when organization option is selected", () => {
 			render(<TaskActions item={mockItem} buttonsDisabled={false} />)
 
-			// Find share button by its test ID and click it
-			const shareButton = screen.getByTestId("share-button")
-			fireEvent.click(shareButton)
+			// Find button by its icon class
+			const buttons = screen.getAllByRole("button")
+			const shareButton = buttons.find((btn) => btn.querySelector(".codicon-link"))
+			expect(shareButton).toBeDefined()
+			fireEvent.click(shareButton!)
 
 			const orgOption = screen.getByText("Share with Organization")
 			fireEvent.click(orgOption)
@@ -147,9 +154,11 @@ describe("TaskActions", () => {
 		it("sends shareCurrentTask message when public option is selected", () => {
 			render(<TaskActions item={mockItem} buttonsDisabled={false} />)
 
-			// Find share button by its test ID and click it
-			const shareButton = screen.getByTestId("share-button")
-			fireEvent.click(shareButton)
+			// Find button by its icon class
+			const buttons = screen.getAllByRole("button")
+			const shareButton = buttons.find((btn) => btn.querySelector(".codicon-link"))
+			expect(shareButton).toBeDefined()
+			fireEvent.click(shareButton!)
 
 			const publicOption = screen.getByText("Share Publicly")
 			fireEvent.click(publicOption)
@@ -171,9 +180,11 @@ describe("TaskActions", () => {
 
 			render(<TaskActions item={mockItem} buttonsDisabled={false} />)
 
-			// Find share button by its test ID and click it
-			const shareButton = screen.getByTestId("share-button")
-			fireEvent.click(shareButton)
+			// Find button by its icon class
+			const buttons = screen.getAllByRole("button")
+			const shareButton = buttons.find((btn) => btn.querySelector(".codicon-link"))
+			expect(shareButton).toBeDefined()
+			fireEvent.click(shareButton!)
 
 			expect(screen.queryByText("Share with Organization")).not.toBeInTheDocument()
 			expect(screen.getByText("Share Publicly")).toBeInTheDocument()
@@ -191,21 +202,25 @@ describe("TaskActions", () => {
 		it("shows connect to cloud option when not authenticated", () => {
 			render(<TaskActions item={mockItem} buttonsDisabled={false} />)
 
-			// Find share button by its test ID and click it
-			const shareButton = screen.getByTestId("share-button")
-			fireEvent.click(shareButton)
+			// Find button by its icon class
+			const buttons = screen.getAllByRole("button")
+			const shareButton = buttons.find((btn) => btn.querySelector(".codicon-link"))
+			expect(shareButton).toBeDefined()
+			fireEvent.click(shareButton!)
 
-			expect(screen.getByText("Connect to Roo Code Cloud")).toBeInTheDocument()
-			expect(screen.getByText("Sign in to Roo Code Cloud to share tasks")).toBeInTheDocument()
+			expect(screen.getByText("Connect to AI IDE BAS Cloud")).toBeInTheDocument()
+			expect(screen.getByText("Sign in to AI IDE BAS Cloud to share tasks")).toBeInTheDocument()
 			expect(screen.getByText("Connect")).toBeInTheDocument()
 		})
 
 		it("does not show organization and public options when not authenticated", () => {
 			render(<TaskActions item={mockItem} buttonsDisabled={false} />)
 
-			// Find share button by its test ID and click it
-			const shareButton = screen.getByTestId("share-button")
-			fireEvent.click(shareButton)
+			// Find button by its icon class
+			const buttons = screen.getAllByRole("button")
+			const shareButton = buttons.find((btn) => btn.querySelector(".codicon-link"))
+			expect(shareButton).toBeDefined()
+			fireEvent.click(shareButton!)
 
 			expect(screen.queryByText("Share with Organization")).not.toBeInTheDocument()
 			expect(screen.queryByText("Share Publicly")).not.toBeInTheDocument()
@@ -214,9 +229,11 @@ describe("TaskActions", () => {
 		it("sends rooCloudSignIn message when connect to cloud is selected", () => {
 			render(<TaskActions item={mockItem} buttonsDisabled={false} />)
 
-			// Find share button by its test ID and click it
-			const shareButton = screen.getByTestId("share-button")
-			fireEvent.click(shareButton)
+			// Find button by its icon class
+			const buttons = screen.getAllByRole("button")
+			const shareButton = buttons.find((btn) => btn.querySelector(".codicon-link"))
+			expect(shareButton).toBeDefined()
+			fireEvent.click(shareButton!)
 
 			const connectOption = screen.getByText("Connect")
 			fireEvent.click(connectOption)
@@ -236,8 +253,9 @@ describe("TaskActions", () => {
 
 			render(<TaskActions item={mockItem} buttonsDisabled={false} />)
 
-			// Find share button by its test ID
-			const shareButton = screen.getByTestId("share-button")
+			// Find button by its icon class
+			const buttons = screen.getAllByRole("button")
+			const shareButton = buttons.find((btn) => btn.querySelector(".codicon-link"))
 			expect(shareButton).toBeInTheDocument()
 			expect(shareButton).toBeDisabled()
 
@@ -285,8 +303,10 @@ describe("TaskActions", () => {
 			const { rerender } = render(<TaskActions item={mockItem} buttonsDisabled={false} />)
 
 			// Click share button to open connect modal
-			const shareButton = screen.getByTestId("share-button")
-			fireEvent.click(shareButton)
+			const buttons = screen.getAllByRole("button")
+			const shareButton = buttons.find((btn) => btn.querySelector(".codicon-link"))
+			expect(shareButton).toBeDefined()
+			fireEvent.click(shareButton!)
 
 			// Click connect button to initiate authentication
 			const connectButton = screen.getByText("Connect")
@@ -333,11 +353,12 @@ describe("TaskActions", () => {
 			})
 		})
 
-		it("renders delete button when item has size", () => {
+		it("renders delete button and file size when item has size", () => {
 			render(<TaskActions item={mockItem} buttonsDisabled={false} />)
 
 			const deleteButton = screen.getByLabelText("Delete Task (Shift + Click to skip confirmation)")
 			expect(deleteButton).toBeInTheDocument()
+			expect(screen.getByText("1024 B")).toBeInTheDocument()
 		})
 
 		it("does not render delete button when item has no size", () => {
@@ -353,10 +374,11 @@ describe("TaskActions", () => {
 		it("keeps share, export, and copy buttons enabled but disables delete button when buttonsDisabled is true", () => {
 			render(<TaskActions item={mockItem} buttonsDisabled={true} />)
 
-			// Find buttons by their labels/test IDs
-			const shareButton = screen.getByTestId("share-button")
+			// Find buttons by their labels/icons
+			const buttons = screen.getAllByRole("button")
+			const shareButton = buttons.find((btn) => btn.querySelector(".codicon-link"))
 			const exportButton = screen.getByLabelText("Export task history")
-			const copyButton = screen.getByLabelText("history:copyPrompt")
+			const copyButton = buttons.find((btn) => btn.querySelector(".codicon-copy"))
 			const deleteButton = screen.getByLabelText("Delete Task (Shift + Click to skip confirmation)")
 
 			// Share, export, and copy buttons should be enabled regardless of buttonsDisabled
@@ -371,9 +393,10 @@ describe("TaskActions", () => {
 			// Test with buttonsDisabled = false
 			const { rerender } = render(<TaskActions item={mockItem} buttonsDisabled={false} />)
 
-			let shareButton = screen.getByTestId("share-button")
+			let buttons = screen.getAllByRole("button")
+			let shareButton = buttons.find((btn) => btn.querySelector(".codicon-link"))
 			let exportButton = screen.getByLabelText("Export task history")
-			let copyButton = screen.getByLabelText("history:copyPrompt")
+			let copyButton = buttons.find((btn) => btn.querySelector(".codicon-copy"))
 			let deleteButton = screen.getByLabelText("Delete Task (Shift + Click to skip confirmation)")
 
 			expect(shareButton).not.toBeDisabled()
@@ -384,9 +407,10 @@ describe("TaskActions", () => {
 			// Test with buttonsDisabled = true
 			rerender(<TaskActions item={mockItem} buttonsDisabled={true} />)
 
-			shareButton = screen.getByTestId("share-button")
+			buttons = screen.getAllByRole("button")
+			shareButton = buttons.find((btn) => btn.querySelector(".codicon-link"))
 			exportButton = screen.getByLabelText("Export task history")
-			copyButton = screen.getByLabelText("history:copyPrompt")
+			copyButton = buttons.find((btn) => btn.querySelector(".codicon-copy"))
 			deleteButton = screen.getByLabelText("Delete Task (Shift + Click to skip confirmation)")
 
 			// Share, export, and copy remain enabled

@@ -4,7 +4,6 @@ export type VscodeLlmModelId = keyof typeof vscodeLlmModels
 
 export const vscodeLlmDefaultModelId: VscodeLlmModelId = "claude-3.5-sonnet"
 
-// https://docs.cline.bot/provider-config/vscode-language-model-api
 export const vscodeLlmModels = {
 	"gpt-3.5-turbo": {
 		contextWindow: 12114,
@@ -102,18 +101,6 @@ export const vscodeLlmModels = {
 		supportsToolCalling: true,
 		maxInputTokens: 81638,
 	},
-	"claude-4-sonnet": {
-		contextWindow: 128000,
-		supportsImages: true,
-		supportsPromptCache: false,
-		inputPrice: 0,
-		outputPrice: 0,
-		family: "claude-sonnet-4",
-		version: "claude-sonnet-4",
-		name: "Claude Sonnet 4",
-		supportsToolCalling: true,
-		maxInputTokens: 111836,
-	},
 	"gemini-2.0-flash-001": {
 		contextWindow: 127827,
 		supportsImages: true,
@@ -127,7 +114,7 @@ export const vscodeLlmModels = {
 		maxInputTokens: 127827,
 	},
 	"gemini-2.5-pro": {
-		contextWindow: 128000,
+		contextWindow: 63830,
 		supportsImages: true,
 		supportsPromptCache: false,
 		inputPrice: 0,
@@ -136,10 +123,10 @@ export const vscodeLlmModels = {
 		version: "gemini-2.5-pro-preview-03-25",
 		name: "Gemini 2.5 Pro (Preview)",
 		supportsToolCalling: true,
-		maxInputTokens: 108637,
+		maxInputTokens: 63830,
 	},
 	"o4-mini": {
-		contextWindow: 128000,
+		contextWindow: 111446,
 		supportsImages: false,
 		supportsPromptCache: false,
 		inputPrice: 0,
@@ -148,10 +135,10 @@ export const vscodeLlmModels = {
 		version: "o4-mini-2025-04-16",
 		name: "o4-mini (Preview)",
 		supportsToolCalling: true,
-		maxInputTokens: 111452,
+		maxInputTokens: 111446,
 	},
 	"gpt-4.1": {
-		contextWindow: 128000,
+		contextWindow: 111446,
 		supportsImages: true,
 		supportsPromptCache: false,
 		inputPrice: 0,
@@ -160,31 +147,7 @@ export const vscodeLlmModels = {
 		version: "gpt-4.1-2025-04-14",
 		name: "GPT-4.1 (Preview)",
 		supportsToolCalling: true,
-		maxInputTokens: 111452,
-	},
-	"gpt-5-mini": {
-		contextWindow: 128000,
-		supportsImages: true,
-		supportsPromptCache: false,
-		inputPrice: 0,
-		outputPrice: 0,
-		family: "gpt-5-mini",
-		version: "gpt-5-mini",
-		name: "GPT-5 mini (Preview)",
-		supportsToolCalling: true,
-		maxInputTokens: 108637,
-	},
-	"gpt-5": {
-		contextWindow: 128000,
-		supportsImages: true,
-		supportsPromptCache: false,
-		inputPrice: 0,
-		outputPrice: 0,
-		family: "gpt-5",
-		version: "gpt-5",
-		name: "GPT-5 (Preview)",
-		supportsToolCalling: true,
-		maxInputTokens: 108637,
+		maxInputTokens: 111446,
 	},
 } as const satisfies Record<
 	string,

@@ -22,14 +22,12 @@ import { changeLanguage, t } from "../../i18n"
 import { Package } from "../../shared/package"
 import { RouterName, toRouterName, ModelRecord } from "../../shared/api"
 import { supportPrompt } from "../../shared/support-prompt"
-import { MessageEnhancer } from "./messageEnhancer"
 
 import { checkoutDiffPayloadSchema, checkoutRestorePayloadSchema, WebviewMessage } from "../../shared/WebviewMessage"
 import { checkExistKey } from "../../shared/checkExistApiConfig"
 import { experimentDefault } from "../../shared/experiments"
 import { Terminal } from "../../integrations/terminal/Terminal"
 import { openFile } from "../../integrations/misc/open-file"
-import { CodeIndexManager } from "../../services/code-index/manager"
 import { openImage, saveImage } from "../../integrations/misc/image-handler"
 import { selectImages } from "../../integrations/misc/process-images"
 import { getTheme } from "../../integrations/theme/getTheme"
@@ -37,6 +35,7 @@ import { discoverChromeHostUrl, tryChromeHostUrl } from "../../services/browser/
 import { searchWorkspaceFiles } from "../../services/search/file-search"
 import { fileExistsAtPath } from "../../utils/fs"
 import { playTts, setTtsEnabled, setTtsSpeed, stopTts } from "../../utils/tts"
+import { singleCompletionHandler } from "../../utils/single-completion-handler"
 import { searchCommits } from "../../utils/git"
 import { exportSettings, importSettingsWithFeedback } from "../config/importExport"
 import { getOpenAiModels } from "../../api/providers/openai"
@@ -50,6 +49,7 @@ import { getModels, flushModels } from "../../api/providers/fetchers/modelCache"
 import { GetModelsOptions } from "../../shared/api"
 import { generateSystemPrompt } from "./generateSystemPrompt"
 import { getCommand } from "../../utils/commands"
+import { AiIdeBasFilesClient } from "../../services/files/client"
 
 const ALLOWED_VSCODE_SETTINGS = new Set(["terminal.integrated.inheritEnv"])
 
@@ -111,9 +111,9 @@ export const webviewMessageHandler = async (
 	 * Handles confirmed message deletion from webview dialog
 	 */
 	const handleDeleteMessageConfirm = async (messageTs: number): Promise<void> => {
-		// Only proceed if we have a current task.
-		if (provider.getCurrentTask()) {
-			const currentCline = provider.getCurrentTask()!
+		// Only proceed if we have a current cline
+		if (provider.getCurrentCline()) {
+			const currentCline = provider.getCurrentCline()!
 			const { messageIndex, apiConversationHistoryIndex } = findMessageIndices(messageTs, currentCline)
 
 			if (messageIndex !== -1) {
@@ -124,7 +124,7 @@ export const webviewMessageHandler = async (
 					await removeMessagesThisAndSubsequent(currentCline, messageIndex, apiConversationHistoryIndex)
 
 					// Initialize with history item after deletion
-					await provider.createTaskWithHistoryItem(historyItem)
+					await provider.initClineWithHistoryItem(historyItem)
 				} catch (error) {
 					console.error("Error in delete message:", error)
 					vscode.window.showErrorMessage(
@@ -156,9 +156,9 @@ export const webviewMessageHandler = async (
 		editedContent: string,
 		images?: string[],
 	): Promise<void> => {
-		// Only proceed if we have a current task.
-		if (provider.getCurrentTask()) {
-			const currentCline = provider.getCurrentTask()!
+		// Only proceed if we have a current cline
+		if (provider.getCurrentCline()) {
+			const currentCline = provider.getCurrentCline()!
 
 			// Use findMessageIndices to find messages based on timestamp
 			const { messageIndex, apiConversationHistoryIndex } = findMessageIndices(messageTs, currentCline)
@@ -288,24 +288,7 @@ export const webviewMessageHandler = async (
 			// Initializing new instance of Cline will make sure that any
 			// agentically running promises in old instance don't affect our new
 			// task. This essentially creates a fresh slate for the new task.
-			try {
-				await provider.createTask(message.text, message.images)
-				// Task created successfully - notify the UI to reset
-				await provider.postMessageToWebview({
-					type: "invoke",
-					invoke: "newChat",
-				})
-			} catch (error) {
-				// For all errors, reset the UI and show error
-				await provider.postMessageToWebview({
-					type: "invoke",
-					invoke: "newChat",
-				})
-				// Show error to user
-				vscode.window.showErrorMessage(
-					`Failed to create task: ${error instanceof Error ? error.message : String(error)}`,
-				)
-			}
+			await provider.initClineWithTask(message.text, message.images)
 			break
 		case "customInstructions":
 			await provider.updateCustomInstructions(message.text)
@@ -350,10 +333,6 @@ export const webviewMessageHandler = async (
 			await updateGlobalState("allowedMaxRequests", message.value)
 			await provider.postStateToWebview()
 			break
-		case "allowedMaxCost":
-			await updateGlobalState("allowedMaxCost", message.value)
-			await provider.postStateToWebview()
-			break
 		case "alwaysAllowSubtasks":
 			await updateGlobalState("alwaysAllowSubtasks", message.bool)
 			await provider.postStateToWebview()
@@ -363,7 +342,7 @@ export const webviewMessageHandler = async (
 			await provider.postStateToWebview()
 			break
 		case "askResponse":
-			provider.getCurrentTask()?.handleWebviewAskResponse(message.askResponse!, message.text, message.images)
+			provider.getCurrentCline()?.handleWebviewAskResponse(message.askResponse!, message.text, message.images)
 			break
 		case "autoCondenseContext":
 			await updateGlobalState("autoCondenseContext", message.bool)
@@ -375,23 +354,19 @@ export const webviewMessageHandler = async (
 			break
 		case "terminalOperation":
 			if (message.terminalOperation) {
-				provider.getCurrentTask()?.handleTerminalOperation(message.terminalOperation)
+				provider.getCurrentCline()?.handleTerminalOperation(message.terminalOperation)
 			}
 			break
 		case "clearTask":
-			// Clear task resets the current session and allows for a new task
-			// to be started, if this session is a subtask - it allows the
-			// parent task to be resumed.
-			// Check if the current task actually has a parent task.
-			const currentTask = provider.getCurrentTask()
-
+			// clear task resets the current session and allows for a new task to be started, if this session is a subtask - it allows the parent task to be resumed
+			// Check if the current task actually has a parent task
+			const currentTask = provider.getCurrentCline()
 			if (currentTask && currentTask.parentTask) {
 				await provider.finishSubTask(t("common:tasks.canceled"))
 			} else {
 				// Regular task - just clear it
 				await provider.clearTask()
 			}
-
 			await provider.postStateToWebview()
 			break
 		case "didShowAnnouncement":
@@ -408,15 +383,14 @@ export const webviewMessageHandler = async (
 			})
 			break
 		case "exportCurrentTask":
-			const currentTaskId = provider.getCurrentTask()?.taskId
+			const currentTaskId = provider.getCurrentCline()?.taskId
 			if (currentTaskId) {
 				provider.exportTaskWithId(currentTaskId)
 			}
 			break
 		case "shareCurrentTask":
-			const shareTaskId = provider.getCurrentTask()?.taskId
-			const clineMessages = provider.getCurrentTask()?.clineMessages
-
+			const shareTaskId = provider.getCurrentCline()?.taskId
+			const clineMessages = provider.getCurrentCline()?.clineMessages
 			if (!shareTaskId) {
 				vscode.window.showErrorMessage(t("common:errors.share_no_active_task"))
 				break
@@ -565,26 +539,10 @@ export const webviewMessageHandler = async (
 
 			const modelFetchPromises: Array<{ key: RouterName; options: GetModelsOptions }> = [
 				{ key: "openrouter", options: { provider: "openrouter" } },
-				{
-					key: "requesty",
-					options: {
-						provider: "requesty",
-						apiKey: apiConfiguration.requestyApiKey,
-						baseUrl: apiConfiguration.requestyBaseUrl,
-					},
-				},
+				{ key: "requesty", options: { provider: "requesty", apiKey: apiConfiguration.requestyApiKey } },
 				{ key: "glama", options: { provider: "glama" } },
 				{ key: "unbound", options: { provider: "unbound", apiKey: apiConfiguration.unboundApiKey } },
 			]
-
-			// Add IO Intelligence if API key is provided
-			const ioIntelligenceApiKey = apiConfiguration.ioIntelligenceApiKey
-			if (ioIntelligenceApiKey) {
-				modelFetchPromises.push({
-					key: "io-intelligence",
-					options: { provider: "io-intelligence", apiKey: ioIntelligenceApiKey },
-				})
-			}
 
 			// Don't fetch Ollama and LM Studio models by default anymore
 			// They have their own specific handlers: requestOllamaModels and requestLmStudioModels
@@ -627,7 +585,7 @@ export const webviewMessageHandler = async (
 					} else if (routerName === "lmstudio" && Object.keys(result.value.models).length > 0) {
 						provider.postMessageToWebview({
 							type: "lmStudioModels",
-							lmStudioModels: result.value.models,
+							lmStudioModels: Object.keys(result.value.models),
 						})
 					}
 				} else {
@@ -691,7 +649,7 @@ export const webviewMessageHandler = async (
 				if (Object.keys(lmStudioModels).length > 0) {
 					provider.postMessageToWebview({
 						type: "lmStudioModels",
-						lmStudioModels: lmStudioModels,
+						lmStudioModels: Object.keys(lmStudioModels),
 					})
 				}
 			} catch (error) {
@@ -747,14 +705,96 @@ export const webviewMessageHandler = async (
 			break
 		case "openExternal":
 			if (message.url) {
-				vscode.env.openExternal(vscode.Uri.parse(message.url))
+				// Используем openMention для обработки внешних ссылок с доверенными доменами
+				await openMention(message.url)
 			}
 			break
+		case "files:status": {
+			const client = new AiIdeBasFilesClient(provider.context)
+			const isAuthorized = await client.isAuthorized()
+			await provider.postMessageToWebview({ type: "files:authChanged", isAuthorized })
+			break
+		}
+		case "files:login": {
+			const client = new AiIdeBasFilesClient(provider.context)
+			const url = client.getLoginUrl()
+			await openMention(url)
+			break
+		}
+		case "files:logout": {
+			const client = new AiIdeBasFilesClient(provider.context)
+			await client.logout()
+			await provider.postMessageToWebview({ type: "files:authChanged", isAuthorized: false })
+			break
+		}
+		case "files:list": {
+			const client = new AiIdeBasFilesClient(provider.context)
+			try {
+				const files = await client.listFiles(message.values)
+				await provider.postMessageToWebview({ type: "files:list:result", files })
+			} catch (error) {
+				await provider.postMessageToWebview({ type: "files:error", error: (error as Error).message })
+			}
+			break
+		}
+		case "files:delete": {
+			const client = new AiIdeBasFilesClient(provider.context)
+			try {
+				await client.deleteFile(message.text!)
+				await provider.postMessageToWebview({ type: "files:delete:result", id: message.text })
+				// refresh list if we have last used projectName
+				const projectName: string | undefined = message.values?.projectName
+				const files = await client.listFiles({ projectName })
+				await provider.postMessageToWebview({ type: "files:list:result", files })
+			} catch (error) {
+				const anyErr = error as any
+				const detail = anyErr?.response?.data?.detail || (anyErr?.message ?? String(anyErr))
+				const status = anyErr?.response?.status
+				await provider.postMessageToWebview({ type: "files:error", error: detail, values: { status } })
+			}
+			break
+		}
+		case "files:chooseUpload": {
+			const fileUris = await vscode.window.showOpenDialog({ canSelectMany: true })
+			if (!fileUris || fileUris.length === 0) break
+			const client = new AiIdeBasFilesClient(provider.context)
+			try {
+				const projectName: string | undefined = message.values?.projectName
+				for (const uri of fileUris) {
+					await client.uploadFile(uri.fsPath, projectName || "default")
+				}
+				const files = await client.listFiles({ projectName })
+				await provider.postMessageToWebview({ type: "files:list:result", files })
+			} catch (error) {
+				await provider.postMessageToWebview({ type: "files:error", error: (error as Error).message })
+			}
+			break
+		}
+		case "files:download": {
+			const id = message.text!
+			const dest = await vscode.window.showSaveDialog({ defaultUri: vscode.Uri.file(id) })
+			if (!dest) break
+			const client = new AiIdeBasFilesClient(provider.context)
+			try {
+				await client.downloadFile(id, dest.fsPath)
+			} catch (error) {
+				await provider.postMessageToWebview({ type: "files:error", error: (error as Error).message })
+			}
+			break
+		}
+		case "files:setToken": {
+			const token = (message.text || "").trim()
+			if (token) {
+				await provider.context.secrets.store("aiidebas.token", token)
+				await provider.postMessageToWebview({ type: "files:authChanged", isAuthorized: true })
+			}
+			break
+		}
 		case "checkpointDiff":
 			const result = checkoutDiffPayloadSchema.safeParse(message.payload)
 
 			if (result.success) {
-				await provider.getCurrentTask()?.checkpointDiff(result.data)
+				await provider.getCurrentCline()?.checkpointDiff(result.data)
 			}
 
 			break
@@ -765,13 +805,13 @@ export const webviewMessageHandler = async (
 				await provider.cancelTask()
 
 				try {
-					await pWaitFor(() => provider.getCurrentTask()?.isInitialized === true, { timeout: 3_000 })
+					await pWaitFor(() => provider.getCurrentCline()?.isInitialized === true, { timeout: 3_000 })
 				} catch (error) {
 					vscode.window.showErrorMessage(t("common:errors.checkpoint_timeout"))
 				}
 
 				try {
-					await provider.getCurrentTask()?.checkpointRestore(result.data)
+					await provider.getCurrentCline()?.checkpointRestore(result.data)
 				} catch (error) {
 					vscode.window.showErrorMessage(t("common:errors.checkpoint_failed"))
 				}
@@ -939,22 +979,10 @@ export const webviewMessageHandler = async (
 		case "mcpEnabled":
 			const mcpEnabled = message.bool ?? true
 			await updateGlobalState("mcpEnabled", mcpEnabled)
-
-			// Delegate MCP enable/disable logic to McpHub
-			const mcpHubInstance = provider.getMcpHub()
-			if (mcpHubInstance) {
-				await mcpHubInstance.handleMcpEnabledChange(mcpEnabled)
-			}
-
 			await provider.postStateToWebview()
 			break
 		case "enableMcpServerCreation":
 			await updateGlobalState("enableMcpServerCreation", message.bool ?? true)
-			await provider.postStateToWebview()
-			break
-		case "remoteControlEnabled":
-			await updateGlobalState("remoteControlEnabled", message.bool ?? false)
-			await provider.handleRemoteControlToggle(message.bool ?? false)
 			await provider.postStateToWebview()
 			break
 		case "refreshAllMcpServers": {
@@ -1256,14 +1284,14 @@ export const webviewMessageHandler = async (
 			}
 			break
 		case "deleteMessage": {
-			if (provider.getCurrentTask() && typeof message.value === "number" && message.value) {
+			if (provider.getCurrentCline() && typeof message.value === "number" && message.value) {
 				await handleMessageModificationsOperation(message.value, "delete")
 			}
 			break
 		}
 		case "submitEditedMessage": {
 			if (
-				provider.getCurrentTask() &&
+				provider.getCurrentCline() &&
 				typeof message.value === "number" &&
 				message.value &&
 				message.editedMessageContent
@@ -1366,10 +1394,6 @@ export const webviewMessageHandler = async (
 			await updateGlobalState("enhancementApiConfigId", message.text)
 			await provider.postStateToWebview()
 			break
-		case "includeTaskHistoryInEnhance":
-			await updateGlobalState("includeTaskHistoryInEnhance", message.bool ?? true)
-			await provider.postStateToWebview()
-			break
 		case "condensingApiConfigId":
 			await updateGlobalState("condensingApiConfigId", message.text)
 			await provider.postStateToWebview()
@@ -1394,36 +1418,32 @@ export const webviewMessageHandler = async (
 		case "enhancePrompt":
 			if (message.text) {
 				try {
-					const state = await provider.getState()
+					const { apiConfiguration, customSupportPrompts, listApiConfigMeta, enhancementApiConfigId } =
+						await provider.getState()
 
-					const {
-						apiConfiguration,
-						customSupportPrompts,
-						listApiConfigMeta,
-						enhancementApiConfigId,
-						includeTaskHistoryInEnhance,
-					} = state
+					// Try to get enhancement config first, fall back to current config.
+					let configToUse: ProviderSettings = apiConfiguration
 
-					const currentCline = provider.getCurrentTask()
+					if (enhancementApiConfigId && !!listApiConfigMeta.find(({ id }) => id === enhancementApiConfigId)) {
+						const { name: _, ...providerSettings } = await provider.providerSettingsManager.getProfile({
+							id: enhancementApiConfigId,
+						})
 
-					const result = await MessageEnhancer.enhanceMessage({
-						text: message.text,
-						apiConfiguration,
-						customSupportPrompts,
-						listApiConfigMeta,
-						enhancementApiConfigId,
-						includeTaskHistoryInEnhance,
-						currentClineMessages: currentCline?.clineMessages,
-						providerSettingsManager: provider.providerSettingsManager,
-					})
-
-					if (result.success && result.enhancedText) {
-						// Capture telemetry for prompt enhancement
-						MessageEnhancer.captureTelemetry(currentCline?.taskId, includeTaskHistoryInEnhance)
-						await provider.postMessageToWebview({ type: "enhancedPrompt", text: result.enhancedText })
-					} else {
-						throw new Error(result.error || "Unknown error")
+						if (providerSettings.apiProvider) {
+							configToUse = providerSettings
+						}
 					}
+
+					const enhancedPrompt = await singleCompletionHandler(
+						configToUse,
+						supportPrompt.create("ENHANCE", { userInput: message.text }, customSupportPrompts),
+					)
+
+					// Capture telemetry for prompt enhancement.
+					const currentCline = provider.getCurrentCline()
+					TelemetryService.instance.capturePromptEnhanced(currentCline?.taskId)
+
+					await provider.postMessageToWebview({ type: "enhancedPrompt", text: enhancedPrompt })
 				} catch (error) {
 					provider.log(
 						`Error enhancing prompt: ${JSON.stringify(error, Object.getOwnPropertyNames(error), 2)}`,
@@ -2110,14 +2130,13 @@ export const webviewMessageHandler = async (
 				// Update webview state
 				await provider.postStateToWebview()
 
-				// Then handle validation and initialization for the current workspace
-				const currentCodeIndexManager = provider.getCurrentWorkspaceCodeIndexManager()
-				if (currentCodeIndexManager) {
+				// Then handle validation and initialization
+				if (provider.codeIndexManager) {
 					// If embedder provider changed, perform proactive validation
 					if (embedderProviderChanged) {
 						try {
 							// Force handleSettingsChange which will trigger validation
-							await currentCodeIndexManager.handleSettingsChange()
+							await provider.codeIndexManager.handleSettingsChange()
 						} catch (error) {
 							// Validation failed - the error state is already set by handleSettingsChange
 							provider.log(
@@ -2126,7 +2145,7 @@ export const webviewMessageHandler = async (
 							// Send validation error to webview
 							await provider.postMessageToWebview({
 								type: "indexingStatusUpdate",
-								values: currentCodeIndexManager.getCurrentStatus(),
+								values: provider.codeIndexManager.getCurrentStatus(),
 							})
 							// Exit early - don't try to start indexing with invalid configuration
 							break
@@ -2134,7 +2153,7 @@ export const webviewMessageHandler = async (
 					} else {
 						// No provider change, just handle settings normally
 						try {
-							await currentCodeIndexManager.handleSettingsChange()
+							await provider.codeIndexManager.handleSettingsChange()
 						} catch (error) {
 							// Log but don't fail - settings are saved
 							provider.log(
@@ -2147,10 +2166,10 @@ export const webviewMessageHandler = async (
 					await new Promise((resolve) => setTimeout(resolve, 200))
 
 					// Auto-start indexing if now enabled and configured
-					if (currentCodeIndexManager.isFeatureEnabled && currentCodeIndexManager.isFeatureConfigured) {
-						if (!currentCodeIndexManager.isInitialized) {
+					if (provider.codeIndexManager.isFeatureEnabled && provider.codeIndexManager.isFeatureConfigured) {
+						if (!provider.codeIndexManager.isInitialized) {
 							try {
-								await currentCodeIndexManager.initialize(provider.contextProxy)
+								await provider.codeIndexManager.initialize(provider.contextProxy)
 								provider.log(`Code index manager initialized after settings save`)
 							} catch (error) {
 								provider.log(
@@ -2159,7 +2178,7 @@ export const webviewMessageHandler = async (
 								// Send error status to webview
 								await provider.postMessageToWebview({
 									type: "indexingStatusUpdate",
-									values: currentCodeIndexManager.getCurrentStatus(),
+									values: provider.codeIndexManager.getCurrentStatus(),
 								})
 							}
 						}
@@ -2190,7 +2209,7 @@ export const webviewMessageHandler = async (
 		}
 
 		case "requestIndexingStatus": {
-			const manager = provider.getCurrentWorkspaceCodeIndexManager()
+			const manager = provider.codeIndexManager
 			if (!manager) {
 				// No workspace open - send error status
 				provider.postMessageToWebview({
@@ -2201,23 +2220,11 @@ export const webviewMessageHandler = async (
 						processedItems: 0,
 						totalItems: 0,
 						currentItemUnit: "items",
-						workerspacePath: undefined,
 					},
 				})
 				return
 			}
-
-			const status = manager
-				? manager.getCurrentStatus()
-				: {
-						systemStatus: "Standby",
-						message: "No workspace folder open",
-						processedItems: 0,
-						totalItems: 0,
-						currentItemUnit: "items",
-						workspacePath: undefined,
-					}
-
+			const status = manager.getCurrentStatus()
 			provider.postMessageToWebview({
 				type: "indexingStatusUpdate",
 				values: status,
@@ -2248,7 +2255,7 @@ export const webviewMessageHandler = async (
 		}
 		case "startIndexing": {
 			try {
-				const manager = provider.getCurrentWorkspaceCodeIndexManager()
+				const manager = provider.codeIndexManager
 				if (!manager) {
 					// No workspace open - send error status
 					provider.postMessageToWebview({
@@ -2269,15 +2276,7 @@ export const webviewMessageHandler = async (
 						await manager.initialize(provider.contextProxy)
 					}
 
-					// startIndexing now handles error recovery internally
 					manager.startIndexing()
-
-					// If startIndexing recovered from error, we need to reinitialize
-					if (!manager.isInitialized) {
-						await manager.initialize(provider.contextProxy)
-						// Try starting again after initialization
-						manager.startIndexing()
-					}
 				}
 			} catch (error) {
 				provider.log(`Error starting indexing: ${error instanceof Error ? error.message : String(error)}`)
@@ -2286,7 +2285,7 @@ export const webviewMessageHandler = async (
 		}
 		case "clearIndexData": {
 			try {
-				const manager = provider.getCurrentWorkspaceCodeIndexManager()
+				const manager = provider.codeIndexManager
 				if (!manager) {
 					provider.log("Cannot clear index data: No workspace folder open")
 					provider.postMessageToWebview({
@@ -2640,11 +2639,6 @@ export const webviewMessageHandler = async (
 					text: text,
 				})
 			}
-			break
-		}
-		case "showMdmAuthRequiredNotification": {
-			// Show notification that organization requires authentication
-			vscode.window.showWarningMessage(t("common:mdm.info.organization_requires_auth"))
 			break
 		}
 	}

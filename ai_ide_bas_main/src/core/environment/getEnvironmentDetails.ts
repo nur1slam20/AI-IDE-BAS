@@ -268,10 +268,6 @@ export async function getEnvironmentDetails(cline: Task, includeFileDetails: boo
 		}
 	}
 
-	const todoListEnabled =
-		state && typeof state.apiConfiguration?.todoListEnabled === "boolean"
-			? state.apiConfiguration.todoListEnabled
-			: true
-	const reminderSection = todoListEnabled ? formatReminderSection(cline.todoList) : ""
+	const reminderSection = formatReminderSection(cline.todoList)
 	return `<environment_details>\n${details.trim()}\n${reminderSection}\n</environment_details>`
 }

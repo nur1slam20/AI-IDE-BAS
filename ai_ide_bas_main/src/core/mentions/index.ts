@@ -18,7 +18,7 @@ import { UrlContentFetcher } from "../../services/browser/UrlContentFetcher"
 import { FileContextTracker } from "../context-tracking/FileContextTracker"
 
 import { RooIgnoreController } from "../ignore/RooIgnoreController"
-import { getCommand, type Command } from "../../services/command/commands"
+import { getCommand } from "../../services/command/commands"
 
 import { t } from "../../i18n"
 
@@ -35,9 +35,6 @@ function getUrlErrorMessage(error: unknown): string {
 	if (errorMessage.includes("net::ERR_INTERNET_DISCONNECTED")) {
 		return t("common:errors.no_internet")
 	}
-	if (errorMessage.includes("net::ERR_ABORTED")) {
-		return t("common:errors.url_request_aborted")
-	}
 	if (errorMessage.includes("403") || errorMessage.includes("Forbidden")) {
 		return t("common:errors.url_forbidden")
 	}
@@ -47,6 +44,25 @@ function getUrlErrorMessage(error: unknown): string {
 
 	// Default error message
 	return t("common:errors.url_fetch_failed", { error: errorMessage })
+}
+
+async function isTrustedDomain(url: string): Promise<boolean> {
+	try {
+		const parsedUrl = new URL(url)
+		const domain = parsedUrl.hostname
+
+		// Получаем список доверенных доменов из настроек
+		const trustedDomains = vscode.workspace.getConfiguration("ai-ide-bas").get<string[]>("trustedDomains") || []
+
+		// Проверяем, есть ли домен в списке доверенных
+		return trustedDomains.some((trustedDomain) => {
+			// Поддерживаем точное совпадение и поддомены
+			return domain === trustedDomain || domain.endsWith("." + trustedDomain)
+		})
+	} catch (error) {
+		console.error("Error parsing URL:", error)
+		return false
+	}
 }
 
 export async function openMention(mention?: string): Promise<void> {
@@ -73,7 +89,21 @@ export async function openMention(mention?: string): Promise<void> {
 	} else if (mention === "terminal") {
 		vscode.commands.executeCommand("workbench.action.terminal.focus")
 	} else if (mention.startsWith("http")) {
-		vscode.env.openExternal(vscode.Uri.parse(mention))
+		const isTrusted = await isTrustedDomain(mention)
+
+		if (isTrusted) {
+			// Для доверенных доменов пытаемся открыть без диалога
+			try {
+				await vscode.env.openExternal(vscode.Uri.parse(mention))
+			} catch (error) {
+				console.error("Error opening trusted domain:", error)
+				// Fallback к обычному способу
+				vscode.env.openExternal(vscode.Uri.parse(mention))
+			}
+		} else {
+			// Для недоверенных доменов - обычное поведение с диалогом
+			vscode.env.openExternal(vscode.Uri.parse(mention))
+		}
 	}
 }
 
@@ -89,38 +119,13 @@ export async function parseMentions(
 	maxReadFileLine?: number,
 ): Promise<string> {
 	const mentions: Set<string> = new Set()
-	const validCommands: Map<string, Command> = new Map()
+	const commandMentions: Set<string> = new Set()
 
-	// First pass: check which command mentions exist and cache the results
-	const commandMatches = Array.from(text.matchAll(commandRegexGlobal))
-	const uniqueCommandNames = new Set(commandMatches.map(([, commandName]) => commandName))
-
-	const commandExistenceChecks = await Promise.all(
-		Array.from(uniqueCommandNames).map(async (commandName) => {
-			try {
-				const command = await getCommand(cwd, commandName)
-				return { commandName, command }
-			} catch (error) {
-				// If there's an error checking command existence, treat it as non-existent
-				return { commandName, command: undefined }
-			}
-		}),
-	)
-
-	// Store valid commands for later use
-	for (const { commandName, command } of commandExistenceChecks) {
-		if (command) {
-			validCommands.set(commandName, command)
-		}
-	}
-
-	// Only replace text for commands that actually exist
-	let parsedText = text
-	for (const [match, commandName] of commandMatches) {
-		if (validCommands.has(commandName)) {
-			parsedText = parsedText.replace(match, `Command '${commandName}' (see below for command content)`)
-		}
-	}
+	// First pass: extract command mentions (starting with /)
+	let parsedText = text.replace(commandRegexGlobal, (match, commandName) => {
+		commandMentions.add(commandName)
+		return `Command '${commandName}' (see below for command content)`
+	})
 
 	// Second pass: handle regular mentions
 	parsedText = parsedText.replace(mentionRegexGlobal, (match, mention) => {
@@ -241,15 +246,20 @@ export async function parseMentions(
 		}
 	}
 
-	// Process valid command mentions using cached results
-	for (const [commandName, command] of validCommands) {
+	// Process command mentions
+	for (const commandName of commandMentions) {
 		try {
-			let commandOutput = ""
-			if (command.description) {
-				commandOutput += `Description: ${command.description}\n\n`
+			const command = await getCommand(cwd, commandName)
+			if (command) {
+				let commandOutput = ""
+				if (command.description) {
+					commandOutput += `Description: ${command.description}\n\n`
+				}
+				commandOutput += command.content
+				parsedText += `\n\n<command name="${commandName}">\n${commandOutput}\n</command>`
+			} else {
+				parsedText += `\n\n<command name="${commandName}">\nCommand '${commandName}' not found. Available commands can be found in .roo/commands/ or ~/.roo/commands/\n</command>`
 			}
-			commandOutput += command.content
-			parsedText += `\n\n<command name="${commandName}">\n${commandOutput}\n</command>`
 		} catch (error) {
 			parsedText += `\n\n<command name="${commandName}">\nError loading command '${commandName}': ${error.message}\n</command>`
 		}

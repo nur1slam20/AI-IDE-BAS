@@ -48,10 +48,6 @@ describe("RooProtectedController", () => {
 			expect(controller.isWriteProtected("AGENTS.md")).toBe(true)
 		})
 
-		it("should protect AGENT.md file", () => {
-			expect(controller.isWriteProtected("AGENT.md")).toBe(true)
-		})
-
 		it("should not protect other files starting with .roo", () => {
 			expect(controller.isWriteProtected(".roosettings")).toBe(false)
 			expect(controller.isWriteProtected(".rooconfig")).toBe(false)
@@ -151,7 +147,6 @@ describe("RooProtectedController", () => {
 				".vscode/**",
 				".rooprotected",
 				"AGENTS.md",
-				"AGENT.md",
 			])
 		})
 	})

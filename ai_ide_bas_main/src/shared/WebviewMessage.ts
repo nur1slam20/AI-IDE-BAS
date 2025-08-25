@@ -1,14 +1,14 @@
 import { z } from "zod"
 
-import {
-	type ProviderSettings,
-	type PromptComponent,
-	type ModeConfig,
-	type InstallMarketplaceItemOptions,
-	type MarketplaceItem,
-	marketplaceItemSchema,
+import type {
+	ProviderSettings,
+	PromptComponent,
+	ModeConfig,
+	InstallMarketplaceItemOptions,
+	MarketplaceItem,
+	ShareVisibility,
 } from "@roo-code/types"
-import type { ShareVisibility } from "@roo-code/cloud"
+import { marketplaceItemSchema } from "@roo-code/types"
 
 import { Mode } from "./modes"
 
@@ -80,7 +80,6 @@ export interface WebviewMessage {
 		| "alwaysAllowMcp"
 		| "alwaysAllowModeSwitch"
 		| "allowedMaxRequests"
-		| "allowedMaxCost"
 		| "alwaysAllowSubtasks"
 		| "alwaysAllowUpdateTodoList"
 		| "autoCondenseContext"
@@ -130,7 +129,6 @@ export interface WebviewMessage {
 		| "terminalCompressProgressBar"
 		| "mcpEnabled"
 		| "enableMcpServerCreation"
-		| "remoteControlEnabled"
 		| "searchCommits"
 		| "alwaysApproveResubmit"
 		| "requestDelaySeconds"
@@ -142,7 +140,6 @@ export interface WebviewMessage {
 		| "copySystemPrompt"
 		| "systemPrompt"
 		| "enhancementApiConfigId"
-		| "includeTaskHistoryInEnhance"
 		| "updateExperimental"
 		| "autoApprovalEnabled"
 		| "updateCustomMode"
@@ -187,6 +184,14 @@ export interface WebviewMessage {
 		| "profileThresholds"
 		| "setHistoryPreviewCollapsed"
 		| "openExternal"
+		| "files:status"
+		| "files:login"
+		| "files:logout"
+		| "files:list"
+		| "files:delete"
+		| "files:setToken"
+		| "files:chooseUpload"
+		| "files:download"
 		| "filterMarketplaceItems"
 		| "marketplaceButtonClicked"
 		| "installMarketplaceItem"
@@ -211,7 +216,6 @@ export interface WebviewMessage {
 		| "deleteCommand"
 		| "createCommand"
 		| "insertTextIntoTextarea"
-		| "showMdmAuthRequiredNotification"
 	text?: string
 	editedMessageContent?: string
 	tab?: "settings" | "history" | "mcp" | "modes" | "chat" | "marketplace" | "account"

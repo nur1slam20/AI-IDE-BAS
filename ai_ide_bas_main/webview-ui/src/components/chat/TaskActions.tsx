@@ -1,4 +1,5 @@
 import { useState } from "react"
+import prettyBytes from "pretty-bytes"
 import { useTranslation } from "react-i18next"
 
 import type { HistoryItem } from "@roo-code/types"
@@ -21,7 +22,8 @@ export const TaskActions = ({ item, buttonsDisabled }: TaskActionsProps) => {
 	const { copyWithFeedback, showCopyFeedback } = useCopyToClipboard()
 
 	return (
-		<div className="flex flex-row items-center">
+		<div className="flex flex-row gap-1">
+			<ShareButton item={item} disabled={false} />
 			<IconButton
 				iconClass="codicon-desktop-download"
 				title={t("chat:task.export")}
@@ -51,6 +53,7 @@ export const TaskActions = ({ item, buttonsDisabled }: TaskActionsProps) => {
 								}
 							}}
 						/>
+						<span className="ml-1 text-xs text-vscode-foreground opacity-85">{prettyBytes(item.size)}</span>
 					</div>
 					{deleteTaskId && (
 						<DeleteTaskDialog
@@ -61,7 +64,6 @@ export const TaskActions = ({ item, buttonsDisabled }: TaskActionsProps) => {
 					)}
 				</>
 			)}
-			<ShareButton item={item} disabled={false} showLabel={false} />
 		</div>
 	)
 }

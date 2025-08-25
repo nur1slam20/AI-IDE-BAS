@@ -1,15 +1,9 @@
 import { VSCodeLink } from "@vscode/webview-ui-toolkit/react"
 
 import { useRequestyKeyInfo } from "@/components/ui/hooks/useRequestyKeyInfo"
-import { toRequestyServiceUrl } from "@roo/utils/requesty"
 
-type RequestyBalanceDisplayProps = {
-	apiKey: string
-	baseUrl?: string
-}
-
-export const RequestyBalanceDisplay = ({ baseUrl, apiKey }: RequestyBalanceDisplayProps) => {
-	const { data: keyInfo } = useRequestyKeyInfo(baseUrl, apiKey)
+export const RequestyBalanceDisplay = ({ apiKey }: { apiKey: string }) => {
+	const { data: keyInfo } = useRequestyKeyInfo(apiKey)
 
 	if (!keyInfo) {
 		return null
@@ -19,11 +13,8 @@ export const RequestyBalanceDisplay = ({ baseUrl, apiKey }: RequestyBalanceDispl
 	const balance = parseFloat(keyInfo.org_balance)
 	const formattedBalance = balance.toFixed(2)
 
-	const resolvedBaseUrl = toRequestyServiceUrl(baseUrl, "app")
-	const settingsUrl = new URL("settings", resolvedBaseUrl)
-
 	return (
-		<VSCodeLink href={settingsUrl.toString()} className="text-vscode-foreground hover:underline">
+		<VSCodeLink href="https://app.requesty.ai/settings" className="text-vscode-foreground hover:underline">
 			${formattedBalance}
 		</VSCodeLink>
 	)

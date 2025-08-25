@@ -5,12 +5,8 @@ import { ClaudeCodeMessage } from "./types"
 import readline from "readline"
 import { CLAUDE_CODE_DEFAULT_MAX_OUTPUT_TOKENS } from "@roo-code/types"
 import * as os from "os"
-import { t } from "../../i18n"
 
 const cwd = vscode.workspace.workspaceFolders?.map((folder) => folder.uri.fsPath).at(0)
-
-// Claude Code installation URL - can be easily updated if needed
-const CLAUDE_CODE_INSTALLATION_URL = "https://docs.anthropic.com/en/docs/claude-code/setup"
 
 type ClaudeCodeOptions = {
 	systemPrompt: string
@@ -29,18 +25,7 @@ type ProcessState = {
 export async function* runClaudeCode(
 	options: ClaudeCodeOptions & { maxOutputTokens?: number },
 ): AsyncGenerator<ClaudeCodeMessage | string> {
-	const claudePath = options.path || "claude"
-	let process
-
-	try {
-		process = runProcess(options)
-	} catch (error: any) {
-		// Handle ENOENT errors immediately when spawning the process
-		if (error.code === "ENOENT" || error.message?.includes("ENOENT")) {
-			throw createClaudeCodeNotFoundError(claudePath, error)
-		}
-		throw error
-	}
+	const process = runProcess(options)
 
 	const rl = readline.createInterface({
 		input: process.stdout,
@@ -63,14 +48,7 @@ export async function* runClaudeCode(
 		})
 
 		process.on("error", (err) => {
-			// Enhance ENOENT errors with helpful installation guidance
-			if (err.message.includes("ENOENT") || (err as any).code === "ENOENT") {
-				processState.error = createClaudeCodeNotFoundError(claudePath, err)
-			} else {
-				processState.error = err
-			}
-			// Close the readline interface to break out of the loop
-			rl.close()
+			processState.error = err
 		})
 
 		for await (const line of rl) {
@@ -89,11 +67,6 @@ export async function* runClaudeCode(
 			}
 		}
 
-		// Check for errors that occurred during processing
-		if (processState.error) {
-			throw processState.error
-		}
-
 		// We rely on the assistant message. If the output was truncated, it's better having a poorly formatted message
 		// from which to extract something, than throwing an error/showing the model didn't return any messages.
 		if (processState.partialData && processState.partialData.startsWith(`{"type":"assistant"`)) {
@@ -102,12 +75,7 @@ export async function* runClaudeCode(
 
 		const { exitCode } = await process
 		if (exitCode !== null && exitCode !== 0) {
-			// If we have a specific ENOENT error, throw that instead
-			if (processState.error && (processState.error as any).name === "ClaudeCodeNotFoundError") {
-				throw processState.error
-			}
-
-			const errorOutput = (processState.error as any)?.message || processState.stderrLogs?.trim()
+			const errorOutput = processState.error?.message || processState.stderrLogs?.trim()
 			throw new Error(
 				`Claude Code process exited with code ${exitCode}.${errorOutput ? ` Error output: ${errorOutput}` : ""}`,
 			)
@@ -254,19 +222,4 @@ function attemptParseChunk(data: string): ClaudeCodeMessage | null {
 		console.error("Error parsing chunk:", error, data.length)
 		return null
 	}
-}
-
-/**
- * Creates a user-friendly error message for Claude Code ENOENT errors
- */
-function createClaudeCodeNotFoundError(claudePath: string, originalError: Error): Error {
-	const errorMessage = t("errors.claudeCode.notFound", {
-		claudePath,
-		installationUrl: CLAUDE_CODE_INSTALLATION_URL,
-		originalError: originalError.message,
-	})
-
-	const error = new Error(errorMessage)
-	error.name = "ClaudeCodeNotFoundError"
-	return error
 }

@@ -12,7 +12,6 @@ import { useRouterModels } from "@src/components/ui/hooks/useRouterModels"
 import { vscode } from "@src/utils/vscode"
 
 import { inputEventTransform } from "../transforms"
-import { ModelRecord } from "@roo/api"
 
 type LMStudioProps = {
 	apiConfiguration: ProviderSettings
@@ -22,7 +21,7 @@ type LMStudioProps = {
 export const LMStudio = ({ apiConfiguration, setApiConfigurationField }: LMStudioProps) => {
 	const { t } = useAppTranslation()
 
-	const [lmStudioModels, setLmStudioModels] = useState<ModelRecord>({})
+	const [lmStudioModels, setLmStudioModels] = useState<string[]>([])
 	const routerModels = useRouterModels()
 
 	const handleInputChange = useCallback(
@@ -42,7 +41,7 @@ export const LMStudio = ({ apiConfiguration, setApiConfigurationField }: LMStudi
 		switch (message.type) {
 			case "lmStudioModels":
 				{
-					const newModels = message.lmStudioModels ?? {}
+					const newModels = message.lmStudioModels ?? []
 					setLmStudioModels(newModels)
 				}
 				break
@@ -63,7 +62,7 @@ export const LMStudio = ({ apiConfiguration, setApiConfigurationField }: LMStudi
 		if (!selectedModel) return false
 
 		// Check if model exists in local LM Studio models
-		if (Object.keys(lmStudioModels).length > 0 && selectedModel in lmStudioModels) {
+		if (lmStudioModels.length > 0 && lmStudioModels.includes(selectedModel)) {
 			return false // Model is available locally
 		}
 
@@ -84,7 +83,7 @@ export const LMStudio = ({ apiConfiguration, setApiConfigurationField }: LMStudi
 		if (!draftModel) return false
 
 		// Check if model exists in local LM Studio models
-		if (Object.keys(lmStudioModels).length > 0 && draftModel in lmStudioModels) {
+		if (lmStudioModels.length > 0 && lmStudioModels.includes(draftModel)) {
 			return false // Model is available locally
 		}
 
@@ -126,15 +125,15 @@ export const LMStudio = ({ apiConfiguration, setApiConfigurationField }: LMStudi
 					</div>
 				</div>
 			)}
-			{Object.keys(lmStudioModels).length > 0 && (
+			{lmStudioModels.length > 0 && (
 				<VSCodeRadioGroup
 					value={
-						(apiConfiguration?.lmStudioModelId || "") in lmStudioModels
+						lmStudioModels.includes(apiConfiguration?.lmStudioModelId || "")
 							? apiConfiguration?.lmStudioModelId
 							: ""
 					}
 					onChange={handleInputChange("lmStudioModelId")}>
-					{Object.keys(lmStudioModels).map((model) => (
+					{lmStudioModels.map((model) => (
 						<VSCodeRadio key={model} value={model} checked={apiConfiguration?.lmStudioModelId === model}>
 							{model}
 						</VSCodeRadio>
@@ -176,23 +175,23 @@ export const LMStudio = ({ apiConfiguration, setApiConfigurationField }: LMStudi
 							</div>
 						)}
 					</div>
-					{Object.keys(lmStudioModels).length > 0 && (
+					{lmStudioModels.length > 0 && (
 						<>
 							<div className="font-medium">{t("settings:providers.lmStudio.selectDraftModel")}</div>
 							<VSCodeRadioGroup
 								value={
-									(apiConfiguration?.lmStudioDraftModelId || "") in lmStudioModels
+									lmStudioModels.includes(apiConfiguration?.lmStudioDraftModelId || "")
 										? apiConfiguration?.lmStudioDraftModelId
 										: ""
 								}
 								onChange={handleInputChange("lmStudioDraftModelId")}>
-								{Object.keys(lmStudioModels).map((model) => (
+								{lmStudioModels.map((model) => (
 									<VSCodeRadio key={`draft-${model}`} value={model}>
 										{model}
 									</VSCodeRadio>
 								))}
 							</VSCodeRadioGroup>
-							{Object.keys(lmStudioModels).length === 0 && (
+							{lmStudioModels.length === 0 && (
 								<div
 									className="text-sm rounded-xs p-2"
 									style={{

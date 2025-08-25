@@ -13,8 +13,6 @@ import { ApiStream } from "../transform/stream"
 
 import { BaseProvider } from "./base-provider"
 import type { SingleCompletionHandler, ApiHandlerCreateMessageMetadata } from "../index"
-import { getModels, getModelsFromCache } from "./fetchers/modelCache"
-import { getApiRequestTimeout } from "./utils/timeout-config"
 
 export class LmStudioHandler extends BaseProvider implements SingleCompletionHandler {
 	protected options: ApiHandlerOptions
@@ -23,11 +21,9 @@ export class LmStudioHandler extends BaseProvider implements SingleCompletionHan
 	constructor(options: ApiHandlerOptions) {
 		super()
 		this.options = options
-
 		this.client = new OpenAI({
 			baseURL: (this.options.lmStudioBaseUrl || "http://localhost:1234") + "/v1",
 			apiKey: "noop",
-			timeout: getApiRequestTimeout(),
 		})
 	}
 
@@ -135,17 +131,9 @@ export class LmStudioHandler extends BaseProvider implements SingleCompletionHan
 	}
 
 	override getModel(): { id: string; info: ModelInfo } {
-		const models = getModelsFromCache("lmstudio")
-		if (models && this.options.lmStudioModelId && models[this.options.lmStudioModelId]) {
-			return {
-				id: this.options.lmStudioModelId,
-				info: models[this.options.lmStudioModelId],
-			}
-		} else {
-			return {
-				id: this.options.lmStudioModelId || "",
-				info: openAiModelInfoSaneDefaults,
-			}
+		return {
+			id: this.options.lmStudioModelId || "",
+			info: openAiModelInfoSaneDefaults,
 		}
 	}
 

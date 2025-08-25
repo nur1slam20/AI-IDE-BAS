@@ -2,21 +2,11 @@ import { memo, useEffect, useRef, useState } from "react"
 import { VSCodeTextField } from "@vscode/webview-ui-toolkit/react"
 import { AlertTriangle } from "lucide-react"
 
-import type { ProviderSettingsEntry } from "@roo-code/types"
-
-import type { OrganizationAllowList } from "@roo/cloud"
+import type { ProviderSettingsEntry, OrganizationAllowList } from "@roo-code/types"
 
 import { useAppTranslation } from "@/i18n/TranslationContext"
-import {
-	type SearchableSelectOption,
-	Button,
-	Input,
-	Dialog,
-	DialogContent,
-	DialogTitle,
-	StandardTooltip,
-	SearchableSelect,
-} from "@/components/ui"
+import { Button, Input, Dialog, DialogContent, DialogTitle, StandardTooltip, SearchableSelect } from "@/components/ui"
+import type { SearchableSelectOption } from "@/components/ui"
 
 interface ApiConfigManagerProps {
 	currentApiConfigName?: string

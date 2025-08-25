@@ -55,6 +55,7 @@ async function main() {
 							["../.env", ".env", { optional: true }],
 							["node_modules/vscode-material-icons/generated", "assets/vscode-material-icons"],
 							["../webview-ui/audio", "webview-ui/audio"],
+							["../roo-code/src/prompts", "prompts"],
 						],
 						srcDir,
 						buildDir,
@@ -72,6 +73,25 @@ async function main() {
 			name: "copyLocales",
 			setup(build) {
 				build.onEnd(() => copyLocales(srcDir, distDir))
+			},
+		},
+		{
+			name: "copyPrompts",
+			setup(build) {
+				build.onEnd(() => {
+					// Copy built-in prompts first, then overlay optional sources
+					copyPaths(
+						[
+							["../roo-code/src/prompts", "prompts"],
+							// Optionally include repository-level Modes directory with role subfolders
+							["../../Modes", "prompts", { optional: true }],
+							// Include repository-level .roo directory with rules (required for export)
+							["../../.roo", "prompts", { optional: true }],
+						],
+						srcDir,
+						distDir,
+					)
+				})
 			},
 		},
 		{

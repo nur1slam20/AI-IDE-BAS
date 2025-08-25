@@ -9,12 +9,6 @@ vi.mock("@src/i18n/TranslationContext", () => ({
 	}),
 }))
 
-vi.mock("@/utils/format", () => ({
-	formatTimeAgo: vi.fn(() => "2 hours ago"),
-	formatDate: vi.fn(() => "January 15 at 2:30 PM"),
-	formatLargeNumber: vi.fn((num: number) => num.toString()),
-}))
-
 const mockTask = {
 	id: "1",
 	number: 1,
@@ -80,10 +74,16 @@ describe("TaskItem", () => {
 		expect(screen.getByTestId("export")).toBeInTheDocument()
 	})
 
-	it("displays time ago information", () => {
+	it("displays cache information when present", () => {
+		const mockTaskWithCache = {
+			...mockTask,
+			cacheReads: 10,
+			cacheWrites: 5,
+		}
+
 		render(
 			<TaskItem
-				item={mockTask}
+				item={mockTaskWithCache}
 				variant="full"
 				isSelected={false}
 				onToggleSelection={vi.fn()}
@@ -91,14 +91,22 @@ describe("TaskItem", () => {
 			/>,
 		)
 
-		// Should display time ago format
-		expect(screen.getByText(/ago/)).toBeInTheDocument()
+		// Should display cache information in the footer
+		expect(screen.getByTestId("cache-compact")).toBeInTheDocument()
+		expect(screen.getByText("5")).toBeInTheDocument() // cache writes
+		expect(screen.getByText("10")).toBeInTheDocument() // cache reads
 	})
 
-	it("applies hover effect class", () => {
+	it("does not display cache information when not present", () => {
+		const mockTaskWithoutCache = {
+			...mockTask,
+			cacheReads: 0,
+			cacheWrites: 0,
+		}
+
 		render(
 			<TaskItem
-				item={mockTask}
+				item={mockTaskWithoutCache}
 				variant="full"
 				isSelected={false}
 				onToggleSelection={vi.fn()}
@@ -106,7 +114,7 @@ describe("TaskItem", () => {
 			/>,
 		)
 
-		const taskItem = screen.getByTestId("task-item-1")
-		expect(taskItem).toHaveClass("hover:bg-vscode-list-hoverBackground")
+		// Cache section should not be present
+		expect(screen.queryByTestId("cache-compact")).not.toBeInTheDocument()
 	})
 })

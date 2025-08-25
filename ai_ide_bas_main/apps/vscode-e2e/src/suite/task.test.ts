@@ -1,6 +1,6 @@
 import * as assert from "assert"
 
-import { RooCodeEventName, type ClineMessage } from "@roo-code/types"
+import type { ClineMessage } from "@roo-code/types"
 
 import { waitUntilCompleted } from "./utils"
 import { setDefaultSuiteTimeout } from "./test-utils"
@@ -13,7 +13,7 @@ suite("Roo Code Task", function () {
 
 		const messages: ClineMessage[] = []
 
-		api.on(RooCodeEventName.Message, ({ message }) => {
+		api.on("message", ({ message }) => {
 			if (message.type === "say" && message.partial === false) {
 				messages.push(message)
 			}

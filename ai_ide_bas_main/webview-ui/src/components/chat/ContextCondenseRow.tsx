@@ -11,11 +11,6 @@ export const ContextCondenseRow = ({ cost, prevContextTokens, newContextTokens, 
 	const { t } = useTranslation()
 	const [isExpanded, setIsExpanded] = useState(false)
 
-	// Handle null/undefined token values to prevent crashes
-	const prevTokens = prevContextTokens ?? 0
-	const newTokens = newContextTokens ?? 0
-	const displayCost = cost ?? 0
-
 	return (
 		<div className="mb-2">
 			<div
@@ -38,11 +33,9 @@ export const ContextCondenseRow = ({ cost, prevContextTokens, newContextTokens, 
 					<span className="codicon codicon-compress text-blue-400" />
 					<span className="font-bold text-vscode-foreground">{t("chat:contextCondense.title")}</span>
 					<span className="text-vscode-descriptionForeground text-sm">
-						{prevTokens.toLocaleString()} → {newTokens.toLocaleString()} {t("tokens")}
+						{prevContextTokens.toLocaleString()} → {newContextTokens.toLocaleString()} {t("tokens")}
 					</span>
-					<VSCodeBadge className={displayCost > 0 ? "opacity-100" : "opacity-0"}>
-						${displayCost.toFixed(2)}
-					</VSCodeBadge>
+					<VSCodeBadge className={cost > 0 ? "opacity-100" : "opacity-0"}>${cost.toFixed(2)}</VSCodeBadge>
 				</div>
 				<span className={`codicon codicon-chevron-${isExpanded ? "up" : "down"}`}></span>
 			</div>

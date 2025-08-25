@@ -3,9 +3,7 @@ import { VSCodeLink } from "@vscode/webview-ui-toolkit/react"
 import { Trans } from "react-i18next"
 import { ChevronsUpDown, Check, X } from "lucide-react"
 
-import type { ProviderSettings, ModelInfo } from "@roo-code/types"
-
-import type { OrganizationAllowList } from "@roo/cloud"
+import type { ProviderSettings, ModelInfo, OrganizationAllowList } from "@roo-code/types"
 
 import { useAppTranslation } from "@src/i18n/TranslationContext"
 import { useSelectedModel } from "@/components/ui/hooks/useSelectedModel"
@@ -30,13 +28,7 @@ import { ApiErrorMessage } from "./ApiErrorMessage"
 
 type ModelIdKey = keyof Pick<
 	ProviderSettings,
-	| "glamaModelId"
-	| "openRouterModelId"
-	| "unboundModelId"
-	| "requestyModelId"
-	| "openAiModelId"
-	| "litellmModelId"
-	| "ioIntelligenceModelId"
+	"glamaModelId" | "openRouterModelId" | "unboundModelId" | "requestyModelId" | "openAiModelId" | "litellmModelId"
 >
 
 interface ModelPickerProps {
@@ -46,11 +38,7 @@ interface ModelPickerProps {
 	serviceName: string
 	serviceUrl: string
 	apiConfiguration: ProviderSettings
-	setApiConfigurationField: <K extends keyof ProviderSettings>(
-		field: K,
-		value: ProviderSettings[K],
-		isUserAction?: boolean,
-	) => void
+	setApiConfigurationField: <K extends keyof ProviderSettings>(field: K, value: ProviderSettings[K]) => void
 	organizationAllowList: OrganizationAllowList
 	errorMessage?: string
 }
@@ -128,7 +116,7 @@ export const ModelPicker = ({
 	useEffect(() => {
 		if (!selectedModelId && !isInitialized.current) {
 			const initialValue = modelIds.includes(selectedModelId) ? selectedModelId : defaultModelId
-			setApiConfigurationField(modelIdKey, initialValue, false) // false = automatic initialization
+			setApiConfigurationField(modelIdKey, initialValue)
 		}
 
 		isInitialized.current = true
@@ -161,7 +149,7 @@ export const ModelPicker = ({
 							aria-expanded={open}
 							className="w-full justify-between"
 							data-testid="model-picker-button">
-							<div className="truncate">{selectedModelId ?? t("settings:common.select")}</div>
+							<div>{selectedModelId ?? t("settings:common.select")}</div>
 							<ChevronsUpDown className="opacity-50" />
 						</Button>
 					</PopoverTrigger>
@@ -200,9 +188,7 @@ export const ModelPicker = ({
 											value={model}
 											onSelect={onSelect}
 											data-testid={`model-option-${model}`}>
-											<span className="truncate" title={model}>
-												{model}
-											</span>
+											{model}
 											<Check
 												className={cn(
 													"size-4 p-0.5 ml-auto",

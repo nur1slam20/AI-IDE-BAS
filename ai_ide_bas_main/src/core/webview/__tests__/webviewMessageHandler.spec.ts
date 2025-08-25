@@ -32,9 +32,9 @@ const mockClineProvider = {
 	},
 	log: vi.fn(),
 	postStateToWebview: vi.fn(),
-	getCurrentTask: vi.fn(),
+	getCurrentCline: vi.fn(),
 	getTaskWithId: vi.fn(),
-	createTaskWithHistoryItem: vi.fn(),
+	initClineWithHistoryItem: vi.fn(),
 } as unknown as ClineProvider
 
 import { t } from "../../../i18n"
@@ -93,48 +93,6 @@ import type { ModeConfig } from "@roo-code/types"
 vi.mock("../../../utils/fs")
 vi.mock("../../../utils/path")
 vi.mock("../../../utils/globalContext")
-
-describe("webviewMessageHandler - requestLmStudioModels", () => {
-	beforeEach(() => {
-		vi.clearAllMocks()
-		mockClineProvider.getState = vi.fn().mockResolvedValue({
-			apiConfiguration: {
-				lmStudioModelId: "model-1",
-				lmStudioBaseUrl: "http://localhost:1234",
-			},
-		})
-	})
-
-	it("successfully fetches models from LMStudio", async () => {
-		const mockModels: ModelRecord = {
-			"model-1": {
-				maxTokens: 4096,
-				contextWindow: 8192,
-				supportsPromptCache: false,
-				description: "Test model 1",
-			},
-			"model-2": {
-				maxTokens: 8192,
-				contextWindow: 16384,
-				supportsPromptCache: false,
-				description: "Test model 2",
-			},
-		}
-
-		mockGetModels.mockResolvedValue(mockModels)
-
-		await webviewMessageHandler(mockClineProvider, {
-			type: "requestLmStudioModels",
-		})
-
-		expect(mockGetModels).toHaveBeenCalledWith({ provider: "lmstudio", baseUrl: "http://localhost:1234" })
-
-		expect(mockClineProvider.postMessageToWebview).toHaveBeenCalledWith({
-			type: "lmStudioModels",
-			lmStudioModels: mockModels,
-		})
-	})
-})
 
 describe("webviewMessageHandler - requestRouterModels", () => {
 	beforeEach(() => {
@@ -533,7 +491,7 @@ describe("webviewMessageHandler - message dialog preferences", () => {
 	beforeEach(() => {
 		vi.clearAllMocks()
 		// Mock a current Cline instance
-		vi.mocked(mockClineProvider.getCurrentTask).mockReturnValue({
+		vi.mocked(mockClineProvider.getCurrentCline).mockReturnValue({
 			taskId: "test-task-id",
 			apiConversationHistory: [],
 			clineMessages: [],
@@ -544,7 +502,7 @@ describe("webviewMessageHandler - message dialog preferences", () => {
 
 	describe("deleteMessage", () => {
 		it("should always show dialog for delete confirmation", async () => {
-			vi.mocked(mockClineProvider.getCurrentTask).mockReturnValue({} as any)
+			vi.mocked(mockClineProvider.getCurrentCline).mockReturnValue({} as any) // Mock current cline exists
 
 			await webviewMessageHandler(mockClineProvider, {
 				type: "deleteMessage",
@@ -560,12 +518,12 @@ describe("webviewMessageHandler - message dialog preferences", () => {
 
 	describe("submitEditedMessage", () => {
 		it("should always show dialog for edit confirmation", async () => {
-			vi.mocked(mockClineProvider.getCurrentTask).mockReturnValue({} as any)
+			vi.mocked(mockClineProvider.getCurrentCline).mockReturnValue({} as any) // Mock current cline exists
 
 			await webviewMessageHandler(mockClineProvider, {
 				type: "submitEditedMessage",
-				value: 123456789,
-				editedMessageContent: "edited content",
+				value: 123456789, // messageTs as number
+				editedMessageContent: "edited content", // text content in editedMessageContent field
 			})
 
 			expect(mockClineProvider.postMessageToWebview).toHaveBeenCalledWith({
@@ -574,57 +532,5 @@ describe("webviewMessageHandler - message dialog preferences", () => {
 				text: "edited content",
 			})
 		})
-	})
-})
-
-describe("webviewMessageHandler - mcpEnabled", () => {
-	let mockMcpHub: any
-
-	beforeEach(() => {
-		vi.clearAllMocks()
-
-		// Create a mock McpHub instance
-		mockMcpHub = {
-			handleMcpEnabledChange: vi.fn().mockResolvedValue(undefined),
-		}
-
-		// Ensure provider exposes getMcpHub and returns our mock
-		;(mockClineProvider as any).getMcpHub = vi.fn().mockReturnValue(mockMcpHub)
-	})
-
-	it("delegates enable=true to McpHub and posts updated state", async () => {
-		await webviewMessageHandler(mockClineProvider, {
-			type: "mcpEnabled",
-			bool: true,
-		})
-
-		expect((mockClineProvider as any).getMcpHub).toHaveBeenCalledTimes(1)
-		expect(mockMcpHub.handleMcpEnabledChange).toHaveBeenCalledTimes(1)
-		expect(mockMcpHub.handleMcpEnabledChange).toHaveBeenCalledWith(true)
-		expect(mockClineProvider.postStateToWebview).toHaveBeenCalledTimes(1)
-	})
-
-	it("delegates enable=false to McpHub and posts updated state", async () => {
-		await webviewMessageHandler(mockClineProvider, {
-			type: "mcpEnabled",
-			bool: false,
-		})
-
-		expect((mockClineProvider as any).getMcpHub).toHaveBeenCalledTimes(1)
-		expect(mockMcpHub.handleMcpEnabledChange).toHaveBeenCalledTimes(1)
-		expect(mockMcpHub.handleMcpEnabledChange).toHaveBeenCalledWith(false)
-		expect(mockClineProvider.postStateToWebview).toHaveBeenCalledTimes(1)
-	})
-
-	it("handles missing McpHub instance gracefully and still posts state", async () => {
-		;(mockClineProvider as any).getMcpHub = vi.fn().mockReturnValue(undefined)
-
-		await webviewMessageHandler(mockClineProvider, {
-			type: "mcpEnabled",
-			bool: true,
-		})
-
-		expect((mockClineProvider as any).getMcpHub).toHaveBeenCalledTimes(1)
-		expect(mockClineProvider.postStateToWebview).toHaveBeenCalledTimes(1)
 	})
 })

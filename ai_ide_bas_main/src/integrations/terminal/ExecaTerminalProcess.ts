@@ -9,8 +9,6 @@ export class ExecaTerminalProcess extends BaseTerminalProcess {
 	private terminalRef: WeakRef<RooTerminal>
 	private aborted = false
 	private pid?: number
-	private subprocess?: ReturnType<typeof execa>
-	private pidUpdatePromise?: Promise<void>
 
 	constructor(terminal: RooTerminal) {
 		super()
@@ -38,7 +36,7 @@ export class ExecaTerminalProcess extends BaseTerminalProcess {
 		try {
 			this.isHot = true
 
-			this.subprocess = execa({
+			const subprocess = execa({
 				shell: true,
 				cwd: this.terminal.getCurrentWorkingDirectory(),
 				all: true,
@@ -50,37 +48,9 @@ export class ExecaTerminalProcess extends BaseTerminalProcess {
 				},
 			})`${command}`
 
-			this.pid = this.subprocess.pid
-
-			// When using shell: true, the PID is for the shell, not the actual command
-			// Find the actual command PID after a small delay
-			if (this.pid) {
-				this.pidUpdatePromise = new Promise<void>((resolve) => {
-					setTimeout(() => {
-						psTree(this.pid!, (err, children) => {
-							if (!err && children.length > 0) {
-								// Update PID to the first child (the actual command)
-								const actualPid = parseInt(children[0].PID)
-								if (!isNaN(actualPid)) {
-									this.pid = actualPid
-								}
-							}
-							resolve()
-						})
-					}, 100)
-				})
-			}
-
-			const rawStream = this.subprocess.iterable({ from: "all", preserveNewlines: true })
-
-			// Wrap the stream to ensure all chunks are strings (execa can return Uint8Array)
-			const stream = (async function* () {
-				for await (const chunk of rawStream) {
-					yield typeof chunk === "string" ? chunk : new TextDecoder().decode(chunk)
-				}
-			})()
-
-			this.terminal.setActiveStream(stream, this.pid)
+			this.pid = subprocess.pid
+			const stream = subprocess.iterable({ from: "all", preserveNewlines: true })
+			this.terminal.setActiveStream(stream, subprocess.pid)
 
 			for await (const line of stream) {
 				if (this.aborted) {
@@ -107,7 +77,7 @@ export class ExecaTerminalProcess extends BaseTerminalProcess {
 
 					timeoutId = setTimeout(() => {
 						try {
-							this.subprocess?.kill("SIGKILL")
+							subprocess.kill("SIGKILL")
 						} catch (e) {}
 
 						resolve()
@@ -115,7 +85,7 @@ export class ExecaTerminalProcess extends BaseTerminalProcess {
 				})
 
 				try {
-					await Promise.race([this.subprocess, kill])
+					await Promise.race([subprocess, kill])
 				} catch (error) {
 					console.log(
 						`[ExecaTerminalProcess#run] subprocess termination error: ${error instanceof Error ? error.message : String(error)}`,
@@ -139,7 +109,6 @@ export class ExecaTerminalProcess extends BaseTerminalProcess {
 
 				this.emit("shell_execution_complete", { exitCode: 1 })
 			}
-			this.subprocess = undefined
 		}
 
 		this.terminal.setActiveStream(undefined)
@@ -147,7 +116,6 @@ export class ExecaTerminalProcess extends BaseTerminalProcess {
 		this.stopHotTimer()
 		this.emit("completed", this.fullOutput)
 		this.emit("continue")
-		this.subprocess = undefined
 	}
 
 	public override continue() {
@@ -159,41 +127,7 @@ export class ExecaTerminalProcess extends BaseTerminalProcess {
 	public override abort() {
 		this.aborted = true
 
-		// Function to perform the kill operations
-		const performKill = () => {
-			// Try to kill using the subprocess object
-			if (this.subprocess) {
-				try {
-					this.subprocess.kill("SIGKILL")
-				} catch (e) {
-					console.warn(
-						`[ExecaTerminalProcess#abort] Failed to kill subprocess: ${e instanceof Error ? e.message : String(e)}`,
-					)
-				}
-			}
-
-			// Kill the stored PID (which should be the actual command after our update)
-			if (this.pid) {
-				try {
-					process.kill(this.pid, "SIGKILL")
-				} catch (e) {
-					console.warn(
-						`[ExecaTerminalProcess#abort] Failed to kill process ${this.pid}: ${e instanceof Error ? e.message : String(e)}`,
-					)
-				}
-			}
-		}
-
-		// If PID update is in progress, wait for it before killing
-		if (this.pidUpdatePromise) {
-			this.pidUpdatePromise.then(performKill).catch(() => performKill())
-		} else {
-			performKill()
-		}
-
-		// Continue with the rest of the abort logic
 		if (this.pid) {
-			// Also check for any child processes
 			psTree(this.pid, async (err, children) => {
 				if (!err) {
 					const pids = children.map((p) => parseInt(p.PID))
@@ -214,6 +148,15 @@ export class ExecaTerminalProcess extends BaseTerminalProcess {
 					)
 				}
 			})
+
+			try {
+				console.error(`[ExecaTerminalProcess#abort] SIGKILL parent -> ${this.pid}`)
+				process.kill(this.pid, "SIGKILL")
+			} catch (e) {
+				console.warn(
+					`[ExecaTerminalProcess#abort] Failed to send SIGKILL to main PID ${this.pid}: ${e instanceof Error ? e.message : String(e)}`,
+				)
+			}
 		}
 	}
 

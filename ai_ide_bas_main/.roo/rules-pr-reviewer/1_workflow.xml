@@ -387,7 +387,7 @@
 {
   "commit_id": "[headRefOid from Step 2]",
   "body": "Thank you for your contribution! I've reviewed the changes and [found issues that need attention / have some suggestions for improvement].",
-  "event": "COMMENT",
+  "event": "[COMMENT|REQUEST_CHANGES|APPROVE]",
   "comments": [
     {
       "path": "[file/path/to/code.ts]",
@@ -402,13 +402,18 @@ EOF</command>
       
       The review will be created with all inline comments attached to specific lines of code.
       
-      Example for a review:
+      Note on event types:
+      - "COMMENT": Submit general feedback without approval/rejection
+      - "REQUEST_CHANGES": Request changes be made before merging
+      - "APPROVE": Approve the PR for merging
+      
+      Example for a review requesting changes:
       <execute_command>
       <command>gh api -X POST repos/RooCodeInc/Roo-Code/pulls/6378/reviews --input - <<EOF
 {
   "commit_id": "abc123def4567890...",
   "body": "Thank you for your contribution! I've reviewed the changes and found that the critical issues from the previous review are still pending. I've left some suggestions inline to help improve the implementation.",
-  "event": "COMMENT",
+  "event": "REQUEST_CHANGES",
   "comments": [
     {
       "path": "packages/cloud/src/CloudService.ts",

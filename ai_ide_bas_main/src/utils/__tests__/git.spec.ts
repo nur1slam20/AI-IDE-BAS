@@ -1,4 +1,5 @@
 import { ExecException } from "child_process"
+import * as vscode from "vscode"
 import * as fs from "fs"
 import * as path from "path"
 
@@ -11,6 +12,7 @@ import {
 	sanitizeGitUrl,
 	extractRepositoryName,
 	getWorkspaceGitInfo,
+	GitRepositoryInfo,
 	convertGitUrlToHttps,
 } from "../git"
 import { truncateOutput } from "../../integrations/misc/extract-text"

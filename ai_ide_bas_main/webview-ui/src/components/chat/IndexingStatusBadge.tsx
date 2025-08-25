@@ -4,7 +4,6 @@ import { cn } from "@src/lib/utils"
 import { vscode } from "@src/utils/vscode"
 import { useAppTranslation } from "@/i18n/TranslationContext"
 import { useTooltip } from "@/hooks/useTooltip"
-import { useExtensionState } from "@src/context/ExtensionStateContext"
 import { CodeIndexPopover } from "./CodeIndexPopover"
 import type { IndexingStatus, IndexingStatusUpdateMessage } from "@roo/ExtensionMessage"
 
@@ -14,7 +13,6 @@ interface IndexingStatusBadgeProps {
 
 export const IndexingStatusBadge: React.FC<IndexingStatusBadgeProps> = ({ className }) => {
 	const { t } = useAppTranslation()
-	const { cwd } = useExtensionState()
 	const { showTooltip, handleMouseEnter, handleMouseLeave, cleanup } = useTooltip({ delay: 300 })
 	const [isHovered, setIsHovered] = useState(false)
 
@@ -33,9 +31,7 @@ export const IndexingStatusBadge: React.FC<IndexingStatusBadgeProps> = ({ classN
 		const handleMessage = (event: MessageEvent<IndexingStatusUpdateMessage>) => {
 			if (event.data.type === "indexingStatusUpdate") {
 				const status = event.data.values
-				if (!status.workspacePath || status.workspacePath === cwd) {
-					setIndexingStatus(status)
-				}
+				setIndexingStatus(status)
 			}
 		}
 
@@ -45,7 +41,7 @@ export const IndexingStatusBadge: React.FC<IndexingStatusBadgeProps> = ({ classN
 			window.removeEventListener("message", handleMessage)
 			cleanup()
 		}
-	}, [cleanup, cwd])
+	}, [cleanup])
 
 	// Calculate progress percentage with memoization
 	const progressPercentage = useMemo(

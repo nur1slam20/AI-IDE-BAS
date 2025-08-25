@@ -192,6 +192,7 @@ export const CommandExecution = ({ executionId, text, icon, title }: CommandExec
 				</div>
 				{command && command.trim() && (
 					<CommandPatternSelector
+						command={command}
 						patterns={commandPatterns}
 						allowedCommands={allowedCommands}
 						deniedCommands={deniedCommands}

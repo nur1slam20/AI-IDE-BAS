@@ -601,12 +601,10 @@ const ModesView = ({ onDone }: ModesViewProps) => {
 						<Trans i18nKey="prompts:modes.createModeHelpText">
 							<VSCodeLink
 								href={buildDocLink("basic-usage/using-modes", "prompts_view_modes")}
-								style={{ display: "inline" }}
-								aria-label="Learn about using modes"></VSCodeLink>
+								style={{ display: "inline" }}></VSCodeLink>
 							<VSCodeLink
 								href={buildDocLink("features/custom-modes", "prompts_view_modes")}
-								style={{ display: "inline" }}
-								aria-label="Learn about customizing modes"></VSCodeLink>
+								style={{ display: "inline" }}></VSCodeLink>
 						</Trans>
 					</div>
 
@@ -617,11 +615,9 @@ const ModesView = ({ onDone }: ModesViewProps) => {
 									variant="combobox"
 									role="combobox"
 									aria-expanded={open}
-									className="justify-between w-full"
+									className="justify-between w-60"
 									data-testid="mode-select-trigger">
-									<div className="truncate">
-										{getCurrentMode()?.name || t("prompts:modes.selectMode")}
-									</div>
+									<div>{getCurrentMode()?.name || t("prompts:modes.selectMode")}</div>
 									<ChevronDown className="opacity-50" />
 								</Button>
 							</PopoverTrigger>
@@ -720,7 +716,7 @@ const ModesView = ({ onDone }: ModesViewProps) => {
 										text: value,
 									})
 								}}>
-								<SelectTrigger className="w-full">
+								<SelectTrigger className="w-60">
 									<SelectValue placeholder={t("settings:common.select")} />
 								</SelectTrigger>
 								<SelectContent>
@@ -759,25 +755,17 @@ const ModesView = ({ onDone }: ModesViewProps) => {
 											}
 										}}
 										onChange={(e) => {
-											const newName = e.target.value
-											// Allow users to type freely, including emptying the field
-											setLocalModeName(newName)
+											setLocalModeName(e.target.value)
 										}}
 										onBlur={() => {
 											const customMode = findModeBySlug(visualMode, customModes)
-											if (customMode) {
-												const trimmedName = localModeName.trim()
+											if (customMode && localModeName.trim()) {
 												// Only update if the name is not empty
-												if (trimmedName) {
-													updateCustomMode(visualMode, {
-														...customMode,
-														name: trimmedName,
-														source: customMode.source || "global",
-													})
-												} else {
-													// Revert to the original name if empty
-													setLocalModeName(customMode.name)
-												}
+												updateCustomMode(visualMode, {
+													...customMode,
+													name: localModeName,
+													source: customMode.source || "global",
+												})
 											}
 											// Clear the editing state
 											setCurrentEditingModeSlug(null)
@@ -1168,16 +1156,6 @@ const ModesView = ({ onDone }: ModesViewProps) => {
 											}}
 										/>
 									),
-									"0": (
-										<VSCodeLink
-											href={buildDocLink(
-												"features/custom-instructions#global-rules-directory",
-												"prompts_mode_specific_global_rules",
-											)}
-											style={{ display: "inline" }}
-											aria-label="Learn about global custom instructions for modes"
-										/>
-									),
 								}}
 							/>
 						</div>
@@ -1303,8 +1281,7 @@ const ModesView = ({ onDone }: ModesViewProps) => {
 															"features/footgun-prompting",
 															"prompts_advanced_system_prompt",
 														)}
-														style={{ display: "inline" }}
-														aria-label="Read important information about overriding system prompts"></VSCodeLink>
+														style={{ display: "inline" }}></VSCodeLink>
 												),
 												"2": <strong />,
 											}}
@@ -1323,11 +1300,10 @@ const ModesView = ({ onDone }: ModesViewProps) => {
 						<Trans i18nKey="prompts:globalCustomInstructions.description">
 							<VSCodeLink
 								href={buildDocLink(
-									"features/custom-instructions#setting-up-global-rules",
+									"features/custom-instructions#global-custom-instructions",
 									"prompts_global_custom_instructions",
 								)}
-								style={{ display: "inline" }}
-								aria-label="Learn more about global custom instructions"></VSCodeLink>
+								style={{ display: "inline" }}></VSCodeLink>
 						</Trans>
 					</div>
 					<VSCodeTextArea
@@ -1364,16 +1340,6 @@ const ModesView = ({ onDone }: ModesViewProps) => {
 												},
 											})
 										}
-									/>
-								),
-								"0": (
-									<VSCodeLink
-										href={buildDocLink(
-											"features/custom-instructions#setting-up-global-rules",
-											"prompts_global_rules",
-										)}
-										style={{ display: "inline" }}
-										aria-label="Learn about setting up global custom instructions"
 									/>
 								),
 							}}

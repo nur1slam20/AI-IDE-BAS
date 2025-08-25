@@ -1,41 +1,9 @@
-import type { Metadata } from "next"
-import { SEO } from "@/lib/seo"
-
-const TITLE = "Privacy Policy"
-const DESCRIPTION =
-	"Privacy policy for Roo Code Cloud and marketing website. Learn how we handle your data and protect your privacy."
-const PATH = "/privacy"
-const OG_IMAGE = SEO.ogImage
+import { Metadata } from "next"
 
 export const metadata: Metadata = {
-	title: TITLE,
-	description: DESCRIPTION,
-	alternates: {
-		canonical: `${SEO.url}${PATH}`,
-	},
-	openGraph: {
-		title: TITLE,
-		description: DESCRIPTION,
-		url: `${SEO.url}${PATH}`,
-		siteName: SEO.name,
-		images: [
-			{
-				url: OG_IMAGE.url,
-				width: OG_IMAGE.width,
-				height: OG_IMAGE.height,
-				alt: OG_IMAGE.alt,
-			},
-		],
-		locale: SEO.locale,
-		type: "article",
-	},
-	twitter: {
-		card: SEO.twitterCard,
-		title: TITLE,
-		description: DESCRIPTION,
-		images: [OG_IMAGE.url],
-	},
-	keywords: [...SEO.keywords, "privacy", "data protection", "GDPR", "security"],
+	title: "Privacy Policy - Roo Code",
+	description:
+		"Privacy policy for Roo Code Cloud and marketing website. Learn how we handle your data and protect your privacy.",
 }
 
 export default function Privacy() {

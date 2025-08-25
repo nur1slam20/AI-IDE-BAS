@@ -21,12 +21,5 @@
 		"useUnknownInCatchVariables": false
 	},
 	"include": ["."],
-	"exclude": ["node_modules"],
-	"watchOptions": {
-		"watchFile": "useFsEvents",
-		"watchDirectory": "useFsEvents",
-		"fallbackPolling": "dynamicPriority",
-		"synchronousWatchDirectory": true,
-		"excludeDirectories": ["**/node_modules", "**/dist", "**/.turbo"]
-	}
+	"exclude": ["node_modules"]
 }

@@ -38,12 +38,6 @@
 			"noResults": "No tags found.",
 			"selected": "Showing items with any of the selected tags"
 		},
-		"installed": {
-			"label": "Filter by status",
-			"all": "All Items",
-			"installed": "Installed",
-			"notInstalled": "Not Installed"
-		},
 		"title": "Marketplace"
 	},
 	"done": "Done",

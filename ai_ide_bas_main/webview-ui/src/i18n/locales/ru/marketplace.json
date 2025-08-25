@@ -13,12 +13,6 @@
 			"placeholderMcp": "Поиск MCPs...",
 			"placeholderMode": "Поиск режимов..."
 		},
-		"installed": {
-			"label": "Фильтр по статусу",
-			"all": "Все элементы",
-			"installed": "Установленные",
-			"notInstalled": "Не установленные"
-		},
 		"type": {
 			"label": "Фильтр по типу:",
 			"all": "Все типы",

@@ -1,7 +1,7 @@
 "use client"
 
 import { motion } from "framer-motion"
-import { Bot, Code, Brain, Wrench, Terminal, Puzzle, Globe, Shield, Zap } from "lucide-react"
+import { FaRobot, FaCode, FaBrain, FaTools, FaTerminal, FaPuzzlePiece, FaGlobe } from "react-icons/fa"
 import { FeaturesMobile } from "./features-mobile"
 
 import { ReactNode } from "react"
@@ -10,62 +10,58 @@ export interface Feature {
 	icon: ReactNode
 	title: string
 	description: string
+	size: "small" | "large"
 }
 
 export const features: Feature[] = [
 	{
-		icon: <Bot className="h-6 w-6 text-white" />,
+		icon: <FaRobot className="h-6 w-6" />,
 		title: "Your AI Dev Team in VS Code",
 		description:
 			"Roo Code puts a team of agentic AI assistants directly in your editor, with the power to plan, write, and fix code across multiple files.",
+		size: "large",
 	},
 	{
-		icon: <Code className="h-6 w-6 text-white" />,
+		icon: <FaCode className="h-6 w-6" />,
 		title: "Multiple Specialized Modes",
 		description:
 			"From coding to debugging to architecture, Roo Code has a mode for every dev scenario—just switch on the fly.",
+		size: "small",
 	},
 	{
-		icon: <Brain className="h-6 w-6 text-white" />,
+		icon: <FaBrain className="h-6 w-6" />,
 		title: "Deep Project-wide Context",
 		description:
 			"Roo Code reads your entire codebase, preserving valid code through diff-based edits for seamless multi-file refactors.",
+		size: "small",
 	},
 	{
-		icon: <Wrench className="h-6 w-6 text-white" />,
+		icon: <FaTools className="h-6 w-6" />,
 		title: "Open-Source and Model-Agnostic",
 		description:
 			"Bring your own model or use local AI—no vendor lock-in. Roo Code is free, open, and adaptable to your needs.",
+		size: "large",
 	},
 	{
-		icon: <Terminal className="h-6 w-6 text-white" />,
+		icon: <FaTerminal className="h-6 w-6" />,
 		title: "Guarded Command Execution",
 		description:
 			"Approve or deny commands as needed. Roo Code automates your dev workflow while keeping oversight firmly in your hands.",
+		size: "small",
 	},
 	{
-		icon: <Puzzle className="h-6 w-6 text-white" />,
+		icon: <FaPuzzlePiece className="h-6 w-6" />,
 		title: "Fully Customizable",
 		description:
-			"Create or tweak modes, define usage rules, and shape Roo Code's behavior precisely—your code, your way.",
+			"Create or tweak modes, define usage rules, and shape Roo Code’s behavior precisely—your code, your way.",
+		size: "small",
 	},
 	{
-		icon: <Globe className="h-6 w-6 text-white" />,
+		icon: <FaGlobe className="h-6 w-6" />,
 		title: "Automated Browser Actions",
 		description:
 			"Seamlessly test and verify your web app directly from VS Code—Roo Code can open a browser, run checks, and more.",
-	},
-	{
-		icon: <Shield className="h-6 w-6 text-white" />,
-		title: "Secure by Design",
-		description:
-			"Security-first from the ground up, Roo Code meets rigorous standards without slowing you down. Monitoring and strict policies keep your code safe at scale.",
-	},
-	{
-		icon: <Zap className="h-6 w-6 text-white" />,
-		title: "Seamless Setup and Workflows",
-		description:
-			"Get started in minutes—no heavy configs. Roo Code fits alongside your existing tools and dev flow, while supercharging your productivity.",
+		size: "small",
 	},
 ]
 
@@ -131,7 +127,7 @@ export function Features() {
 							duration: 0.6,
 							ease: [0.21, 0.45, 0.27, 0.9],
 						}}>
-						<h2 className="text-4xl font-bold tracking-tight sm:text-5xl">
+						<h2 className="bg-gradient-to-b from-foreground to-foreground/70 bg-clip-text text-4xl font-bold tracking-tight text-transparent sm:text-5xl">
 							Powerful features for modern developers.
 						</h2>
 						<p className="mt-6 text-lg text-muted-foreground">
@@ -152,12 +148,15 @@ export function Features() {
 					viewport={{ once: true }}>
 					<div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3 lg:gap-8">
 						{features.map((feature, index) => (
-							<motion.div key={index} variants={itemVariants} className="group relative">
-								<div className="absolute -inset-px rounded-2xl bg-gradient-to-r from-blue-500/30 via-cyan-500/30 to-purple-500/30 opacity-0 blur-sm transition-all duration-500 group-hover:opacity-100 dark:from-blue-500/50 dark:via-cyan-500/50 dark:to-purple-500/50" />
-								<div className="relative h-full rounded-2xl border border-border/50 bg-background/30 p-8 backdrop-blur-xl transition-all duration-300 hover:border-border hover:bg-background/50 dark:hover:border-border/80 dark:hover:bg-background/40">
-									<div className="mb-5 inline-flex items-center justify-center rounded-xl bg-gradient-to-r from-blue-500/10 to-cyan-500/10 p-2.5 dark:from-blue-500/20 dark:to-cyan-500/20">
+							<motion.div
+								key={index}
+								variants={itemVariants}
+								className={`group relative ${feature.size === "large" ? "lg:col-span-2" : ""} ${index % 2 === 0 ? "lg:translate-y-12" : ""}`}>
+								<div className="absolute -inset-px rounded-2xl bg-gradient-to-r from-blue-500/30 via-cyan-500/30 to-purple-500/30 opacity-0 blur-sm transition-opacity duration-500 group-hover:opacity-100" />
+								<div className="relative h-full rounded-2xl border border-border/50 bg-background/30 p-8 backdrop-blur-xl transition-colors duration-300 hover:border-border">
+									<div className="mb-5 inline-flex items-center justify-center rounded-xl bg-gradient-to-r from-blue-500/5 to-cyan-500/5 p-2.5">
 										<div className="rounded-lg bg-gradient-to-r from-blue-500/80 to-cyan-500/80 p-2.5">
-											{feature.icon}
+											<div className="text-foreground/90">{feature.icon}</div>
 										</div>
 									</div>
 									<h3 className="mb-3 text-xl font-medium text-foreground/90">{feature.title}</h3>
