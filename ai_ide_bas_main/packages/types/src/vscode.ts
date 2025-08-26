@@ -59,6 +59,8 @@ export const commandIds = [
 	"exportMarkdownToPdf",
 	// Export role instructions
 	"exportRoleInstructions",
+	// Export all role rules
+	"exportAllRoleRules",
 ] as const
 
 export type CommandId = (typeof commandIds)[number]

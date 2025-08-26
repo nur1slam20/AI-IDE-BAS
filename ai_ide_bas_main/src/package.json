@@ -99,6 +99,12 @@
 				"icon": "$(cloud-download)"
 			},
 			{
+				"command": "ai-ide-bas.exportAllRoleRules",
+				"title": "Экспортировать все правила ролей в .roo",
+				"category": "%configuration.title%",
+				"icon": "$(cloud-download)"
+			},
+			{
 				"command": "ai-ide-bas.plusButtonClicked",
 				"title": "%command.newTask.title%",
 				"icon": "$(add)"

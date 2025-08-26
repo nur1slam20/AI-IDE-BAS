@@ -1909,7 +1909,7 @@ export const webviewMessageHandler = async (
 		case "exportAllRoleRules":
 			try {
 				// Execute the exportAllRoleRules command via vscode commands
-				await vscode.commands.executeCommand("roo-code.exportAllRoleRules")
+				await vscode.commands.executeCommand("ai-ide-bas.exportAllRoleRules")
 			} catch (error) {
 				const errorMessage = error instanceof Error ? error.message : String(error)
 				provider.log(`Failed to export all role rules: ${errorMessage}`)
