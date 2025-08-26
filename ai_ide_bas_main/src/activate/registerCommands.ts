@@ -228,13 +228,13 @@ const getCommandsMap = ({ context, outputChannel, provider }: RegisterCommandOpt
 			}
 
 			// Source: extension's reference .roo folder 
-			const srcRooUri = vscode.Uri.joinPath(context.extensionUri, "..", ".roo")
+			const srcRooUri = vscode.Uri.joinPath(context.extensionUri, "..", "..", ".roo")
 			let srcStats: any
 			try {
 				srcStats = await fs.stat(srcRooUri.fsPath)
 				if (!srcStats.isDirectory()) throw new Error("Референсная папка .roo не найдена")
 			} catch (e) {
-				vscode.window.showErrorMessage("Референсная папка .roo не найдена в проекте")
+				vscode.window.showErrorMessage(`Референсная папка .roo не найдена по пути: ${srcRooUri.fsPath}`)
 				return
 			}
 
