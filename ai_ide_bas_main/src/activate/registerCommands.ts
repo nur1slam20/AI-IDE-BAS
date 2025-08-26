@@ -227,14 +227,14 @@ const getCommandsMap = ({ context, outputChannel, provider }: RegisterCommandOpt
 				return
 			}
 
-			// Source: extension's reference .roo folder 
-			const srcRooUri = vscode.Uri.joinPath(context.extensionUri, "..", "..", ".roo")
+			// Source: extension's built-in rules folders (copied during build to dist/prompts)
+			const srcPromptsUri = vscode.Uri.joinPath(context.extensionUri, "dist", "prompts")
 			let srcStats: any
 			try {
-				srcStats = await fs.stat(srcRooUri.fsPath)
-				if (!srcStats.isDirectory()) throw new Error("Референсная папка .roo не найдена")
+				srcStats = await fs.stat(srcPromptsUri.fsPath)
+				if (!srcStats.isDirectory()) throw new Error("Папка prompts не найдена")
 			} catch (e) {
-				vscode.window.showErrorMessage(`Референсная папка .roo не найдена по пути: ${srcRooUri.fsPath}`)
+				vscode.window.showErrorMessage(`Папка prompts не найдена по пути: ${srcPromptsUri.fsPath}`)
 				return
 			}
 
@@ -242,10 +242,19 @@ const getCommandsMap = ({ context, outputChannel, provider }: RegisterCommandOpt
 			const dstRooDir = path.join(workspaceRoot, ".roo")
 			await fs.mkdir(dstRooDir, { recursive: true })
 
-			// Recursive copy of entire .roo to project /.roo (overwrite)
+			// Copy only rules-* directories from prompts to .roo
+			const entries = await fs.readdir(srcPromptsUri.fsPath, { withFileTypes: true })
+			const rulesDirs = entries.filter(entry => entry.isDirectory() && entry.name.startsWith("rules-"))
+			
+			if (rulesDirs.length === 0) {
+				vscode.window.showErrorMessage("Не найдены папки с правилами ролей (rules-*)")
+				return
+			}
+
+			// Recursive copy function
 			const copyRecursive = async (src: string, dst: string) => {
-				const entries = await fs.readdir(src, { withFileTypes: true })
-				for (const entry of entries) {
+				const dirEntries = await fs.readdir(src, { withFileTypes: true })
+				for (const entry of dirEntries) {
 					const srcPath = path.join(src, entry.name)
 					const dstPath = path.join(dst, entry.name)
 					if (entry.isDirectory()) {
@@ -256,9 +265,16 @@ const getCommandsMap = ({ context, outputChannel, provider }: RegisterCommandOpt
 					}
 				}
 			}
-			await copyRecursive(srcRooUri.fsPath, dstRooDir)
 
-			vscode.window.showInformationMessage("Все правила ролей экспортированы в .roo папку проекта") 
+			// Copy each rules-* directory
+			for (const rulesDir of rulesDirs) {
+				const srcRulesPath = path.join(srcPromptsUri.fsPath, rulesDir.name)
+				const dstRulesPath = path.join(dstRooDir, rulesDir.name)
+				await fs.mkdir(dstRulesPath, { recursive: true })
+				await copyRecursive(srcRulesPath, dstRulesPath)
+			}
+
+			vscode.window.showInformationMessage(`Экспортировано ${rulesDirs.length} папок с правилами ролей в .roo папку проекта`) 
 		} catch (error) {
 			vscode.window.showErrorMessage(`Не удалось экспортировать правила ролей: ${error instanceof Error ? error.message : String(error)}`)
 		}
