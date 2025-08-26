@@ -57,6 +57,11 @@
 		"description": "Export this mode with rules from the .roo/rules-{{slug}}/ folder combined into a shareable YAML file. The original files remain unchanged.",
 		"exporting": "Exporting..."
 	},
+	"exportAllRoleRules": {
+		"title": "Export All Role Rules",
+		"description": "Export all role rules from all modes to project .roo folder for customization and version control.",
+		"success": "All role rules have been exported to the project .roo folder"
+	},
 	"importMode": {
 		"selectLevel": "Choose where to import this mode:",
 		"import": "Import",

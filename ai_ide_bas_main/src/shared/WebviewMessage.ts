@@ -205,6 +205,7 @@ export interface WebviewMessage {
 		| "shareTaskSuccess"
 		| "exportMode"
 		| "exportModeResult"
+		| "exportAllRoleRules"
 		| "importMode"
 		| "importModeResult"
 		| "checkRulesDirectory"

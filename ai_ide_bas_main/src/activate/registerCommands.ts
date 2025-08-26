@@ -216,6 +216,53 @@ const getCommandsMap = ({ context, outputChannel, provider }: RegisterCommandOpt
 			vscode.window.showErrorMessage(`Не удалось экспортировать инструкции: ${error instanceof Error ? error.message : String(error)}`)
 		}
 	},
+	exportAllRoleRules: async () => {
+		try {
+			const visibleProvider = getVisibleProviderOrLog(outputChannel)
+			if (!visibleProvider) return
+
+			const workspaceRoot = visibleProvider.cwd || (await import("../utils/path")).getWorkspacePath()
+			if (!workspaceRoot) {
+				vscode.window.showErrorMessage("Нет открытой рабочей папки")
+				return
+			}
+
+			// Source: extension's reference .roo folder 
+			const srcRooUri = vscode.Uri.joinPath(context.extensionUri, "..", ".roo")
+			let srcStats: any
+			try {
+				srcStats = await fs.stat(srcRooUri.fsPath)
+				if (!srcStats.isDirectory()) throw new Error("Референсная папка .roo не найдена")
+			} catch (e) {
+				vscode.window.showErrorMessage("Референсная папка .roo не найдена в проекте")
+				return
+			}
+
+			// Target: workspace .roo directory
+			const dstRooDir = path.join(workspaceRoot, ".roo")
+			await fs.mkdir(dstRooDir, { recursive: true })
+
+			// Recursive copy of entire .roo to project /.roo (overwrite)
+			const copyRecursive = async (src: string, dst: string) => {
+				const entries = await fs.readdir(src, { withFileTypes: true })
+				for (const entry of entries) {
+					const srcPath = path.join(src, entry.name)
+					const dstPath = path.join(dst, entry.name)
+					if (entry.isDirectory()) {
+						await fs.mkdir(dstPath, { recursive: true })
+						await copyRecursive(srcPath, dstPath)
+					} else if (entry.isFile()) {
+						await fs.copyFile(srcPath, dstPath)
+					}
+				}
+			}
+			await copyRecursive(srcRooUri.fsPath, dstRooDir)
+
+			vscode.window.showInformationMessage("Все правила ролей экспортированы в .roo папку проекта") 
+		} catch (error) {
+			vscode.window.showErrorMessage(`Не удалось экспортировать правила ролей: ${error instanceof Error ? error.message : String(error)}`)
+		}
+	},
 	showHumanRelayDialog: (params: { requestId: string; promptText: string }) => {
 		const panel = getPanel()
 

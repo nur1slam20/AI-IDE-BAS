@@ -1220,6 +1220,21 @@ const ModesView = ({ onDone }: ModesViewProps) => {
 								{isExporting ? t("prompts:exportMode.exporting") : t("prompts:exportMode.title")}
 							</Button>
 						)}
+						
+						{/* Export All Role Rules button - always visible */}
+						<Button
+							variant="secondary"
+							onClick={() => {
+								vscode.postMessage({
+									type: "exportAllRoleRules",
+								})
+							}}
+							title={t("prompts:exportAllRoleRules.title")}
+							data-testid="export-all-role-rules-button">
+							<Download className="h-4 w-4" />
+							{t("prompts:exportAllRoleRules.title")}
+						</Button>
+						
 						{/* Import button - always visible */}
 						<Button
 							variant="default"

@@ -1906,6 +1906,16 @@ export const webviewMessageHandler = async (
 				}
 			}
 			break
+		case "exportAllRoleRules":
+			try {
+				// Execute the exportAllRoleRules command via vscode commands
+				await vscode.commands.executeCommand("roo-code.exportAllRoleRules")
+			} catch (error) {
+				const errorMessage = error instanceof Error ? error.message : String(error)
+				provider.log(`Failed to export all role rules: ${errorMessage}`)
+				vscode.window.showErrorMessage(`Не удалось экспортировать правила ролей: ${errorMessage}`)
+			}
+			break
 		case "importMode":
 			try {
 				// Get last used directory for import
