@@ -1245,7 +1245,7 @@ const ModesView = ({ onDone }: ModesViewProps) => {
 						{/* Export button - visible when any mode is selected */}
 						{getCurrentMode() && (
 							<Button
-								variant="default"
+								variant="secondary"
 								onClick={() => {
 									const currentMode = getCurrentMode()
 									if (currentMode?.slug && !isExporting) {
@@ -1266,7 +1266,7 @@ const ModesView = ({ onDone }: ModesViewProps) => {
 						
 						{/* Export All Role Rules button - always visible */}
 						<Button
-							variant="secondary"
+							variant="default"
 							onClick={() => {
 								vscode.postMessage({
 									type: "exportAllRoleRules",
@@ -1280,7 +1280,7 @@ const ModesView = ({ onDone }: ModesViewProps) => {
 						
 						{/* Import button - always visible */}
 						<Button
-							variant="default"
+							variant="secondary"
 							onClick={() => setShowImportDialog(true)}
 							disabled={isImporting}
 							title={t("prompts:modes.importMode")}
