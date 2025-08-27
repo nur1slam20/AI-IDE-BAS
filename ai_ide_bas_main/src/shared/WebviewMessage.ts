@@ -206,6 +206,8 @@ export interface WebviewMessage {
 		| "exportMode"
 		| "exportModeResult"
 		| "exportAllRoleRules"
+		| "loadModeInfo"
+		| "loadModeInfoResult"
 		| "importMode"
 		| "importModeResult"
 		| "checkRulesDirectory"

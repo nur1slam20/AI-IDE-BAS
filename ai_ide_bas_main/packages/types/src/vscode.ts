@@ -61,6 +61,8 @@ export const commandIds = [
 	"exportRoleInstructions",
 	// Export all role rules
 	"exportAllRoleRules",
+	// Load mode info from rules
+	"loadModeInfo",
 ] as const
 
 export type CommandId = (typeof commandIds)[number]

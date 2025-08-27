@@ -19,6 +19,7 @@ import { t } from "../i18n"
 import { exportMarkdownToPdf } from "../integrations/misc/export-markdown-to-pdf"
 import * as path from "path"
 import * as fs from "fs/promises"
+import { loadModeInfo } from "../services/mode-info-loader"
 
 /**
  * Helper to get the visible ClineProvider instance or log if not found.
@@ -277,6 +278,25 @@ const getCommandsMap = ({ context, outputChannel, provider }: RegisterCommandOpt
 			vscode.window.showInformationMessage(`Экспортировано ${rulesDirs.length} папок с правилами ролей в .roo папку проекта`) 
 		} catch (error) {
 			vscode.window.showErrorMessage(`Не удалось экспортировать правила ролей: ${error instanceof Error ? error.message : String(error)}`)
+		}
+	},
+	loadModeInfo: async (modeSlug: string) => {
+		try {
+			const visibleProvider = getVisibleProviderOrLog(outputChannel)
+			if (!visibleProvider) return null
+
+			const workspaceRoot = visibleProvider.cwd || (await import("../utils/path")).getWorkspacePath()
+			
+			const modeInfo = await loadModeInfo(modeSlug, {
+				cwd: workspaceRoot,
+				customModes: visibleProvider.customModes,
+				builtInMode: (await import("../shared/modes")).modes.find(m => m.slug === modeSlug)
+			})
+
+			return modeInfo
+		} catch (error) {
+			console.error(`Failed to load mode info for ${modeSlug}:`, error)
+			return null
 		}
 	},
 	showHumanRelayDialog: (params: { requestId: string; promptText: string }) => {

@@ -84,6 +84,24 @@ const ModesView = ({ onDone }: ModesViewProps) => {
 	// 3. Still sending the mode change to the backend for persistence
 	const [visualMode, setVisualMode] = useState(mode)
 
+	// State for loaded mode info from rules files
+	const [loadedModeInfo, setLoadedModeInfo] = useState<Record<string, any>>({})
+
+	// Function to load mode info from rules files
+	const loadModeInfoFromRules = useCallback((modeSlug: string) => {
+		vscode.postMessage({
+			type: "loadModeInfo",
+			modeSlug,
+		} as any)
+	}, [])
+
+	// Load mode info when visualMode changes
+	useEffect(() => {
+		if (visualMode && !loadedModeInfo[visualMode]) {
+			loadModeInfoFromRules(visualMode)
+		}
+	}, [visualMode, loadedModeInfo, loadModeInfoFromRules])
+
 	// Memoize modes to preserve array order
 	const modes = useMemo(() => getAllModes(customModes), [customModes])
 
@@ -152,6 +170,27 @@ const ModesView = ({ onDone }: ModesViewProps) => {
 				source, // Ensure source is set
 			},
 		})
+	}, [])
+
+	// Effect to handle loadModeInfoResult messages
+	useEffect(() => {
+		const handleMessage = (event: MessageEvent) => {
+			const message = event.data
+			if (message.type === "loadModeInfoResult") {
+				const { modeSlug, modeInfo, error } = message
+				if (error) {
+					console.error(`Failed to load mode info for ${modeSlug}:`, error)
+				} else if (modeInfo) {
+					setLoadedModeInfo(prev => ({
+						...prev,
+						[modeSlug]: modeInfo
+					}))
+				}
+			}
+		}
+
+		window.addEventListener("message", handleMessage)
+		return () => window.removeEventListener("message", handleMessage)
 	}, [])
 
 	// Helper function to find a mode by slug
@@ -829,9 +868,11 @@ const ModesView = ({ onDone }: ModesViewProps) => {
 							value={(() => {
 								const customMode = findModeBySlug(visualMode, customModes)
 								const prompt = customModePrompts?.[visualMode] as PromptComponent
+								const loadedInfo = loadedModeInfo[visualMode]
 								return (
 									customMode?.roleDefinition ??
 									prompt?.roleDefinition ??
+									loadedInfo?.roleDefinition ??
 									getRoleDefinition(visualMode)
 								)
 							})()}
@@ -888,7 +929,8 @@ const ModesView = ({ onDone }: ModesViewProps) => {
 							value={(() => {
 								const customMode = findModeBySlug(visualMode, customModes)
 								const prompt = customModePrompts?.[visualMode] as PromptComponent
-								return customMode?.description ?? prompt?.description ?? getDescription(visualMode)
+								const loadedInfo = loadedModeInfo[visualMode]
+								return customMode?.description ?? prompt?.description ?? loadedInfo?.description ?? getDescription(visualMode)
 							})()}
 							onChange={(e) => {
 								const value =
@@ -943,7 +985,8 @@ const ModesView = ({ onDone }: ModesViewProps) => {
 							value={(() => {
 								const customMode = findModeBySlug(visualMode, customModes)
 								const prompt = customModePrompts?.[visualMode] as PromptComponent
-								return customMode?.whenToUse ?? prompt?.whenToUse ?? getWhenToUse(visualMode)
+								const loadedInfo = loadedModeInfo[visualMode]
+								return customMode?.whenToUse ?? prompt?.whenToUse ?? loadedInfo?.whenToUse ?? getWhenToUse(visualMode)
 							})()}
 							onChange={(e) => {
 								const value =

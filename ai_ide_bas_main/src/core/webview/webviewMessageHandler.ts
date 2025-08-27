@@ -1916,6 +1916,29 @@ export const webviewMessageHandler = async (
 				vscode.window.showErrorMessage(`Не удалось экспортировать правила ролей: ${errorMessage}`)
 			}
 			break
+		case "loadModeInfo":
+			try {
+				const { modeSlug } = message as any
+				if (!modeSlug) {
+					throw new Error("Mode slug is required")
+				}
+				const modeInfo = await vscode.commands.executeCommand("ai-ide-bas.loadModeInfo", modeSlug)
+				postMessageToWebview(provider, {
+					type: "loadModeInfoResult",
+					modeSlug,
+					modeInfo,
+				})
+			} catch (error) {
+				const errorMessage = error instanceof Error ? error.message : String(error)
+				provider.log(`Failed to load mode info: ${errorMessage}`)
+				postMessageToWebview(provider, {
+					type: "loadModeInfoResult",
+					modeSlug: (message as any).modeSlug,
+					modeInfo: null,
+					error: errorMessage,
+				})
+			}
+			break
 		case "importMode":
 			try {
 				// Get last used directory for import
