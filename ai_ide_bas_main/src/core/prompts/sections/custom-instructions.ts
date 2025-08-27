@@ -216,6 +216,8 @@ export async function loadRuleFiles(cwd: string): Promise<string> {
 	return ""
 }
 
+
+
 /**
  * Load AGENTS.md file from the project root if it exists
  */
@@ -241,6 +243,7 @@ export async function addCustomInstructions(
 		language?: string
 		rooIgnoreInstructions?: string
 		settings?: SystemPromptSettings
+		loadBuiltInModeRules?: (mode: string) => Promise<string>
 	} = {},
 ): Promise<string> {
 	const sections = []
@@ -280,6 +283,13 @@ export async function addCustomInstructions(
 				modeRuleContent = await safeReadFile(path.join(cwd, clineModeRuleFile))
 				if (modeRuleContent) {
 					usedRuleFile = clineModeRuleFile
+				} else if (options.loadBuiltInModeRules) {
+					// Final fallback: try to load built-in rules from extension bundle
+					const builtInRules = await options.loadBuiltInModeRules(mode)
+					if (builtInRules) {
+						modeRuleContent = "\n" + builtInRules
+						usedRuleFile = `built-in rules-${mode}`
+					}
 				}
 			}
 		}
