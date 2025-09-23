@@ -56,6 +56,7 @@ import {
 	Chutes,
 	ClaudeCode,
 	DeepSeek,
+	MyDeepSeek,
 	Gemini,
 	Glama,
 	Groq,
@@ -466,6 +467,10 @@ const ApiOptions = ({
 
 			{selectedProvider === "deepseek" && (
 				<DeepSeek apiConfiguration={apiConfiguration} setApiConfigurationField={setApiConfigurationField} />
+			)}
+
+			{selectedProvider === "my-deepseek" && (
+				<MyDeepSeek apiConfiguration={apiConfiguration} setApiConfigurationField={setApiConfigurationField} />
 			)}
 
 			{selectedProvider === "moonshot" && (

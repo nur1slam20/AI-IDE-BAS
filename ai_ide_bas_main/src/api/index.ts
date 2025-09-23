@@ -17,6 +17,7 @@ import {
 	GeminiHandler,
 	OpenAiNativeHandler,
 	DeepSeekHandler,
+	MyDeepSeekHandler,
 	MoonshotHandler,
 	MistralHandler,
 	VsCodeLmHandler,
@@ -91,6 +92,8 @@ export function buildApiHandler(configuration: ProviderSettings): ApiHandler {
 			return new OpenAiNativeHandler(options)
 		case "deepseek":
 			return new DeepSeekHandler(options)
+		case "my-deepseek":
+			return new MyDeepSeekHandler(options)
 		case "moonshot":
 			return new MoonshotHandler(options)
 		case "vscode-lm":

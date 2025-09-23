@@ -1,7 +1,5 @@
 import { useState } from "react"
 import { useAppTranslation } from "@src/i18n/TranslationContext"
-import { YouTubeLink } from "../common/YouTubeVideo"
-import { InstructionsLink } from "../common/InstructionsLink"
 
 const RooHero = () => {
 	const { t } = useAppTranslation()
@@ -12,31 +10,19 @@ const RooHero = () => {
 
 	return (
 		<div className="flex flex-col items-center justify-center pb-4 forced-color-adjust-none">
-			<div
-				style={{
-					backgroundColor: "var(--vscode-foreground)",
-					WebkitMaskImage: `url('${imagesBaseUri}/roo-logo.svg')`,
-					WebkitMaskRepeat: "no-repeat",
-					WebkitMaskSize: "contain",
-					maskImage: `url('${imagesBaseUri}/roo-logo.svg')`,
-					maskRepeat: "no-repeat",
-					maskSize: "contain",
-				}}
-				className="mx-auto">
-				<img src={imagesBaseUri + "/roo-logo.svg"} alt="AI IDE BAS logo" className="h-8 opacity-0" />
+			{/* Inline SVG logo (user-provided) */}
+			<div className="mx-auto mb-3" aria-label="AI IDE BAS logo">
+				<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64" className="opacity-90" role="img">
+					<path d="M30.701,41.663l-2.246,5.145c-0.864,1.978-3.6,1.978-4.464,0l-2.247-5.145c-1.999-4.579-5.598-8.224-10.086-10.216 l-6.183-2.745c-1.966-0.873-1.966-3.733,0-4.605l5.99-2.659c4.604-2.044,8.267-5.824,10.232-10.559l2.276-5.483 c0.844-2.035,3.656-2.035,4.5,0l2.276,5.483c1.965,4.735,5.628,8.515,10.232,10.559l5.99,2.659c1.966,0.873,1.966,3.733,0,4.605 l-6.183,2.745C36.299,33.439,32.7,37.084,30.701,41.663z" fill="currentColor"/>
+					<path d="M30.701,41.663l-2.246,5.145c-0.864,1.978-3.6,1.978-4.464,0l-2.247-5.145c-1.999-4.579-5.598-8.224-10.086-10.216 l-6.183-2.745c-1.966-0.873-1.966-3.733,0-4.605l5.99-2.659c4.604-2.044,8.267-5.824,10.232-10.559l2.276-5.483 c0.844-2.035,3.656-2.035,4.5,0l2.276,5.483c1.965,4.735,5.628,8.515,10.232,10.559l5.99,2.659c1.966,0.873,1.966,3.733,0,4.605 l-6.183,2.745C36.299,33.439,32.7,37.084,30.701,41.663z" fill="currentColor"/>
+					<g>
+						<path d="M51.578,57.887l-0.632,1.448c-0.462,1.06-1.93,1.06-2.393,0l-0.632-1.448c-1.126-2.582-3.155-4.637-5.686-5.762 l-1.946-0.865c-1.052-0.468-1.052-1.998,0-2.465l1.838-0.816c2.596-1.153,4.661-3.285,5.768-5.955l0.649-1.565 c0.452-1.091,1.96-1.091,2.412,0l0.649,1.565c1.107,2.669,3.172,4.801,5.768,5.955l1.837,0.816c1.053,0.468,1.053,1.998,0,2.465 l-1.946,0.865C54.733,53.25,52.704,55.305,51.578,57.887z" fill="currentColor"/>
+						<path d="M51.578,57.887l-0.632,1.448c-0.462,1.06-1.93,1.06-2.393,0l-0.632-1.448c-1.126-2.582-3.155-4.637-5.686-5.762 l-1.946-0.865c-1.052-0.468-1.052-1.998,0-2.465l1.838-0.816c2.596-1.153,4.661-3.285,5.768-5.955l0.649-1.565 c0.452-1.091,1.96-1.091,2.412,0l0.649,1.565c1.107,2.669,3.172,4.801,5.768,5.955l1.837,0.816c1.053,0.468,1.053,1.998,0,2.465 l-1.946,0.865C54.733,53.25,52.704,55.305,51.578,57.887z" fill="currentColor"/>
+					</g>
+				</svg>
 			</div>
 
-			<YouTubeLink
-				videoUrl="https://youtu.be/GxRvJ0pV6-Q?si=t9EL6bSa3lVM6ZWQ"
-				title={t("welcome:buttons.aiIdeBasVideo")}
-				className="mb-3"
-			/>
-
-			<InstructionsLink
-				instructionsUrl="https://telegra.ph/Instrukciya-po-ustanovke-i-nastrojke-AI-IDE-BAS-07-30"
-				title={t("welcome:buttons.setupInstructions")}
-				className="mb-3"
-			/>
+			{/* Instructions link removed per request */}
 		</div>
 	)
 }

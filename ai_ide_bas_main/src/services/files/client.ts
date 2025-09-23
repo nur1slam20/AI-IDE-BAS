@@ -86,6 +86,11 @@ export class AiIdeBasFilesClient {
 		const { data } = await this.http.post(`/projects/${encodeURIComponent(projectName)}/share`, { visibility })
 		return data
 	}
+
+	public async getMe(): Promise<any> {
+		const { data } = await this.http.get(`/me`)
+		return data
+	}
 }
 
 

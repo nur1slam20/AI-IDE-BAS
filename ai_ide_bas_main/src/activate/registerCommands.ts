@@ -143,6 +143,18 @@ const getCommandsMap = ({ context, outputChannel, provider }: RegisterCommandOpt
 		// Also explicitly post the visibility message to trigger scroll reliably
 		visibleProvider.postMessageToWebview({ type: "action", action: "didBecomeVisible" })
 	},
+	showWelcome: () => {
+		const visibleProvider = getVisibleProviderOrLog(outputChannel)
+
+		if (!visibleProvider) {
+			return
+		}
+
+		// Navigate explicitly to the Welcome tab by sending an action the App understands
+		visibleProvider.postMessageToWebview({ type: "action", action: "switchTab", tab: "settings" })
+		// And target the providers section to mimic welcome configuration area
+		visibleProvider.postMessageToWebview({ type: "action", action: "settingsButtonClicked" })
+	},
 	historyButtonClicked: () => {
 		const visibleProvider = getVisibleProviderOrLog(outputChannel)
 

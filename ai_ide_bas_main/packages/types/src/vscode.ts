@@ -47,6 +47,8 @@ export const commandIds = [
 	"handleHumanRelayResponse",
 
 	"newTask",
+	// Show welcome view explicitly
+	"showWelcome",
 
 	"setCustomStoragePath",
 	"importSettings",

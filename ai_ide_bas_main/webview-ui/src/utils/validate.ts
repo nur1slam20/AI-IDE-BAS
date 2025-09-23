@@ -110,6 +110,11 @@ function validateModelsAndKeysProvided(apiConfiguration: ProviderSettings): stri
 				return i18next.t("settings:validation.modelId")
 			}
 			break
+		case "my-deepseek":
+			if (!apiConfiguration.myDeepSeekApiKey) {
+				return i18next.t("settings:validation.apiKey")
+			}
+			break
 	}
 
 	return undefined
@@ -176,6 +181,8 @@ function getModelIdForProvider(apiConfiguration: ProviderSettings, provider: str
 			return apiConfiguration.vsCodeLmModelSelector?.id
 		case "huggingface":
 			return apiConfiguration.huggingFaceModelId
+		case "my-deepseek":
+			return apiConfiguration.apiModelId
 		default:
 			return apiConfiguration.apiModelId
 	}

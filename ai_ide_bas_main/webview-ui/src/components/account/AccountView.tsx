@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react"
+import { useEffect, useRef, useState } from "react"
 import { VSCodeButton } from "@vscode/webview-ui-toolkit/react"
 
 import type { CloudUserInfo } from "@roo-code/types"
@@ -15,41 +15,92 @@ type AccountViewProps = {
 	onDone: () => void
 }
 
-export const AccountView = ({ userInfo, isAuthenticated, cloudApiUrl, onDone }: AccountViewProps) => {
+export const AccountView = ({ userInfo, isAuthenticated, cloudApiUrl: _cloudApiUrl, onDone }: AccountViewProps) => {
 	const { t } = useAppTranslation()
 	const wasAuthenticatedRef = useRef(false)
+	const [isAuthorized, setIsAuthorized] = useState<boolean>(false)
+	const [loading, setLoading] = useState<boolean>(false)
+	const [me, setMe] = useState<any | null>(null)
 
-	const rooLogoUri = (window as any).IMAGES_BASE_URI + "/roo-logo.svg"
+	// Resolve local images base URI exposed by the extension host
+	const imagesBaseUri = (window as any).IMAGES_BASE_URI || ""
+	const fallbackAvatar = `${imagesBaseUri}/fallback-avatar.jpg`
 
-	// Track authentication state changes to detect successful logout
+	// Normalize common field names from different backends
+	const name = me?.name ?? (me as any)?.full_name ?? (me as any)?.fullName ?? (me as any)?.user?.name ?? userInfo?.name
+	const email =
+		me?.email ??
+		(me as any)?.email_address ??
+		(me as any)?.emailAddress ??
+		(me as any)?.user?.email ??
+		userInfo?.email
+	const tokensValue =
+		typeof me?.tokens !== "undefined"
+			? me?.tokens
+			: typeof (me as any)?.token_balance !== "undefined"
+				? (me as any)?.token_balance
+				: typeof (me as any)?.balance !== "undefined"
+					? (me as any)?.balance
+					: typeof (me as any)?.credits !== "undefined"
+						? (me as any)?.credits
+						: (userInfo as any)?.tokens
+
+	// const _rooLogoUri = (window as any).IMAGES_BASE_URI + "/roo-logo.svg" // unused after design change
+
+	// Backend auth state + profile fetch
 	useEffect(() => {
-		if (isAuthenticated) {
+		const handler = (e: MessageEvent<any>) => {
+			const message = e.data
+			if (message?.type === "files:authChanged") {
+				const authorized = Boolean(message.isAuthorized)
+				setIsAuthorized(authorized)
+				if (authorized) {
+					setLoading(true)
+					vscode.postMessage({ type: "files:me" })
+				} else {
+					setMe(null)
+				}
+			} else if (message?.type === "files:me:result") {
+				setMe(message.me || null)
+				setLoading(false)
+			}
+		}
+
+		window.addEventListener("message", handler)
+		vscode.postMessage({ type: "files:status" })
+		return () => window.removeEventListener("message", handler)
+	}, [])
+
+	// Track logout success via backend auth state
+	useEffect(() => {
+		if (isAuthorized) {
 			wasAuthenticatedRef.current = true
-		} else if (wasAuthenticatedRef.current && !isAuthenticated) {
-			// User just logged out successfully
+		} else if (wasAuthenticatedRef.current && !isAuthorized) {
 			telemetryClient.capture(TelemetryEventName.ACCOUNT_LOGOUT_SUCCESS)
 			wasAuthenticatedRef.current = false
 		}
-	}, [isAuthenticated])
+	}, [isAuthorized])
 
 	const handleConnectClick = () => {
 		// Send telemetry for account connect action
 		telemetryClient.capture(TelemetryEventName.ACCOUNT_CONNECT_CLICKED)
-		vscode.postMessage({ type: "rooCloudSignIn" })
+		vscode.postMessage({ type: "files:login" })
 	}
 
 	const handleLogoutClick = () => {
 		// Send telemetry for account logout action
 		telemetryClient.capture(TelemetryEventName.ACCOUNT_LOGOUT_CLICKED)
-		vscode.postMessage({ type: "rooCloudSignOut" })
+		vscode.postMessage({ type: "files:logout" })
 	}
 
-	const handleVisitCloudWebsite = () => {
-		// Send telemetry for cloud website visit
-		telemetryClient.capture(TelemetryEventName.ACCOUNT_CONNECT_CLICKED)
-		const cloudUrl = cloudApiUrl || "https://app.roocode.com"
-		vscode.postMessage({ type: "openExternal", url: cloudUrl })
-	}
+// const handleVisitCloudWebsite = () => {
+//     // Send telemetry for cloud website visit
+//     telemetryClient.capture(TelemetryEventName.ACCOUNT_CONNECT_CLICKED)
+//     const cloudUrl = cloudApiUrl || "https://app.roocode.com"
+//     vscode.postMessage({ type: "openExternal", url: cloudUrl })
+// }
+
+	const authenticated = isAuthorized || isAuthenticated
 
 	return (
 		<div className="flex flex-col h-full p-4 bg-vscode-editor-background">
@@ -59,47 +110,62 @@ export const AccountView = ({ userInfo, isAuthenticated, cloudApiUrl, onDone }: 
 					{t("settings:common.done")}
 				</VSCodeButton>
 			</div>
-			{isAuthenticated ? (
+			{authenticated ? (
 				<>
-					{userInfo && (
+					{loading ? (
+						<div className="flex flex-col items-center mb-6 animate-pulse">
+							<div className="w-16 h-16 mb-3 rounded-full bg-vscode-editorWidget-background" />
+							<div className="h-4 w-40 bg-vscode-editorWidget-background rounded mb-2" />
+							<div className="h-3 w-56 bg-vscode-editorWidget-background rounded" />
+						</div>
+                    ) : (me || userInfo) && (
 						<div className="flex flex-col items-center mb-6">
 							<div className="w-16 h-16 mb-3 rounded-full overflow-hidden">
-								{userInfo?.picture ? (
-									<img
-										src={userInfo.picture}
-										alt={t("account:profilePicture")}
-										className="w-full h-full object-cover"
-									/>
-								) : (
-									<div className="w-full h-full flex items-center justify-center bg-vscode-button-background text-vscode-button-foreground text-xl">
-										{userInfo?.name?.charAt(0) || userInfo?.email?.charAt(0) || "?"}
-									</div>
-								)}
+								<img
+									src={
+										me?.avatar_url ||
+										me?.avatarUrl ||
+										me?.avatar ||
+										me?.picture ||
+										userInfo?.picture ||
+										fallbackAvatar
+									}
+									onError={(e) => {
+										const el = e.currentTarget as HTMLImageElement
+										el.onerror = null
+										el.src = fallbackAvatar
+									}}
+									alt={t("account:profilePicture")}
+									className="w-full h-full object-cover"
+								/>
 							</div>
-							{userInfo.name && (
-								<h2 className="text-lg font-medium text-vscode-foreground mb-0">{userInfo.name}</h2>
+							{name && (
+								<h2 className="text-lg font-medium text-vscode-foreground mb-0">{name}</h2>
 							)}
-							{userInfo?.email && (
-								<p className="text-sm text-vscode-descriptionForeground">{userInfo?.email}</p>
+							{email && (
+								<p className="text-sm text-vscode-descriptionForeground">{email}</p>
 							)}
-							{userInfo?.organizationName && (
+							{typeof tokensValue !== "undefined" && (
+                                <div className="mt-2 text-sm">
+                                    <span className="text-vscode-descriptionForeground">Tokens:</span>{" "}
+										<span className="font-medium">{tokensValue}</span>
+                                </div>
+                            )}
+							{(me?.organization?.name || userInfo?.organizationName) && (
 								<div className="flex items-center gap-2 text-sm text-vscode-descriptionForeground">
-									{userInfo.organizationImageUrl && (
+									{(me?.organization?.image_url || userInfo?.organizationImageUrl) && (
 										<img
-											src={userInfo.organizationImageUrl}
-											alt={userInfo.organizationName}
+											src={me?.organization?.image_url || userInfo?.organizationImageUrl}
+											alt={me?.organization?.name || userInfo?.organizationName}
 											className="w-4 h-4 rounded object-cover"
 										/>
 									)}
-									<span>{userInfo.organizationName}</span>
+									<span>{me?.organization?.name || userInfo?.organizationName}</span>
 								</div>
 							)}
 						</div>
 					)}
 					<div className="flex flex-col gap-2 mt-4">
-						<VSCodeButton appearance="secondary" onClick={handleVisitCloudWebsite} className="w-full">
-							{t("account:visitCloudWebsite")}
-						</VSCodeButton>
 						<VSCodeButton appearance="secondary" onClick={handleLogoutClick} className="w-full">
 							{t("account:logOut")}
 						</VSCodeButton>
@@ -107,23 +173,6 @@ export const AccountView = ({ userInfo, isAuthenticated, cloudApiUrl, onDone }: 
 				</>
 			) : (
 				<>
-					<div className="flex flex-col items-center mb-1 text-center">
-						<div className="w-16 h-16 mb-1 flex items-center justify-center">
-							<div
-								className="w-12 h-12 bg-vscode-foreground"
-								style={{
-									WebkitMaskImage: `url('${rooLogoUri}')`,
-									WebkitMaskRepeat: "no-repeat",
-									WebkitMaskSize: "contain",
-									maskImage: `url('${rooLogoUri}')`,
-									maskRepeat: "no-repeat",
-									maskSize: "contain",
-								}}>
-								<img src={rooLogoUri} alt="AI IDE BAS logo" className="w-12 h-12 opacity-0" />
-							</div>
-						</div>
-					</div>
-
 					<div className="flex flex-col mb-6 text-center">
 						<h2 className="text-lg font-medium text-vscode-foreground mb-2">
 							{t("account:cloudBenefitsTitle")}

@@ -192,6 +192,8 @@ export interface WebviewMessage {
 		| "files:setToken"
 		| "files:chooseUpload"
 		| "files:download"
+		| "files:share"
+		| "files:me"
 		| "filterMarketplaceItems"
 		| "marketplaceButtonClicked"
 		| "installMarketplaceItem"
