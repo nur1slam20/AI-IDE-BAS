@@ -84,6 +84,24 @@ const ModesView = ({ onDone }: ModesViewProps) => {
 	// 3. Still sending the mode change to the backend for persistence
 	const [visualMode, setVisualMode] = useState(mode)
 
+	// State for loaded mode info from rules files
+	const [loadedModeInfo, setLoadedModeInfo] = useState<Record<string, any>>({})
+
+	// Function to load mode info from rules files
+	const loadModeInfoFromRules = useCallback((modeSlug: string) => {
+		vscode.postMessage({
+			type: "loadModeInfo",
+			modeSlug,
+		} as any)
+	}, [])
+
+	// Load mode info when visualMode changes
+	useEffect(() => {
+		if (visualMode && !loadedModeInfo[visualMode]) {
+			loadModeInfoFromRules(visualMode)
+		}
+	}, [visualMode, loadedModeInfo, loadModeInfoFromRules])
+
 	// Memoize modes to preserve array order
 	const modes = useMemo(() => getAllModes(customModes), [customModes])
 
@@ -152,6 +170,27 @@ const ModesView = ({ onDone }: ModesViewProps) => {
 				source, // Ensure source is set
 			},
 		})
+	}, [])
+
+	// Effect to handle loadModeInfoResult messages
+	useEffect(() => {
+		const handleMessage = (event: MessageEvent) => {
+			const message = event.data
+			if (message.type === "loadModeInfoResult") {
+				const { modeSlug, modeInfo, error } = message
+				if (error) {
+					console.error(`Failed to load mode info for ${modeSlug}:`, error)
+				} else if (modeInfo) {
+					setLoadedModeInfo(prev => ({
+						...prev,
+						[modeSlug]: modeInfo
+					}))
+				}
+			}
+		}
+
+		window.addEventListener("message", handleMessage)
+		return () => window.removeEventListener("message", handleMessage)
 	}, [])
 
 	// Helper function to find a mode by slug
@@ -800,175 +839,11 @@ const ModesView = ({ onDone }: ModesViewProps) => {
 						</div>
 					)}
 
-					{/* Role Definition section */}
-					<div className="mb-4">
-						<div className="flex justify-between items-center mb-1">
-							<div className="font-bold">{t("prompts:roleDefinition.title")}</div>
-							{!findModeBySlug(visualMode, customModes) && (
-								<StandardTooltip content={t("prompts:roleDefinition.resetToDefault")}>
-									<Button
-										variant="ghost"
-										size="icon"
-										onClick={() => {
-											const currentMode = getCurrentMode()
-											if (currentMode?.slug) {
-												handleAgentReset(currentMode.slug, "roleDefinition")
-											}
-										}}
-										data-testid="role-definition-reset">
-										<span className="codicon codicon-discard"></span>
-									</Button>
-								</StandardTooltip>
-							)}
-						</div>
-						<div className="text-sm text-vscode-descriptionForeground mb-2">
-							{t("prompts:roleDefinition.description")}
-						</div>
-						<VSCodeTextArea
-							resize="vertical"
-							value={(() => {
-								const customMode = findModeBySlug(visualMode, customModes)
-								const prompt = customModePrompts?.[visualMode] as PromptComponent
-								return (
-									customMode?.roleDefinition ??
-									prompt?.roleDefinition ??
-									getRoleDefinition(visualMode)
-								)
-							})()}
-							onChange={(e) => {
-								const value =
-									(e as unknown as CustomEvent)?.detail?.target?.value ||
-									((e as any).target as HTMLTextAreaElement).value
-								const customMode = findModeBySlug(visualMode, customModes)
-								if (customMode) {
-									// For custom modes, update the JSON file
-									updateCustomMode(visualMode, {
-										...customMode,
-										roleDefinition: value.trim() || "",
-										source: customMode.source || "global",
-									})
-								} else {
-									// For built-in modes, update the prompts
-									updateAgentPrompt(visualMode, {
-										roleDefinition: value.trim() || undefined,
-									})
-								}
-							}}
-							className="w-full"
-							rows={5}
-							data-testid={`${getCurrentMode()?.slug || "code"}-prompt-textarea`}
-						/>
-					</div>
 
-					{/* Description section */}
-					<div className="mb-4">
-						<div className="flex justify-between items-center mb-1">
-							<div className="font-bold">{t("prompts:description.title")}</div>
-							{!findModeBySlug(visualMode, customModes) && (
-								<StandardTooltip content={t("prompts:description.resetToDefault")}>
-									<Button
-										variant="ghost"
-										size="icon"
-										onClick={() => {
-											const currentMode = getCurrentMode()
-											if (currentMode?.slug) {
-												handleAgentReset(currentMode.slug, "description")
-											}
-										}}
-										data-testid="description-reset">
-										<span className="codicon codicon-discard"></span>
-									</Button>
-								</StandardTooltip>
-							)}
-						</div>
-						<div className="text-sm text-vscode-descriptionForeground mb-2">
-							{t("prompts:description.description")}
-						</div>
-						<VSCodeTextField
-							value={(() => {
-								const customMode = findModeBySlug(visualMode, customModes)
-								const prompt = customModePrompts?.[visualMode] as PromptComponent
-								return customMode?.description ?? prompt?.description ?? getDescription(visualMode)
-							})()}
-							onChange={(e) => {
-								const value =
-									(e as unknown as CustomEvent)?.detail?.target?.value ||
-									((e as any).target as HTMLTextAreaElement).value
-								const customMode = findModeBySlug(visualMode, customModes)
-								if (customMode) {
-									// For custom modes, update the JSON file
-									updateCustomMode(visualMode, {
-										...customMode,
-										description: value.trim() || undefined,
-										source: customMode.source || "global",
-									})
-								} else {
-									// For built-in modes, update the prompts
-									updateAgentPrompt(visualMode, {
-										description: value.trim() || undefined,
-									})
-								}
-							}}
-							className="w-full"
-							data-testid={`${getCurrentMode()?.slug || "code"}-description-textfield`}
-						/>
-					</div>
 
-					{/* When to Use section */}
-					<div className="mb-4">
-						<div className="flex justify-between items-center mb-1">
-							<div className="font-bold">{t("prompts:whenToUse.title")}</div>
-							{!findModeBySlug(visualMode, customModes) && (
-								<StandardTooltip content={t("prompts:whenToUse.resetToDefault")}>
-									<Button
-										variant="ghost"
-										size="icon"
-										onClick={() => {
-											const currentMode = getCurrentMode()
-											if (currentMode?.slug) {
-												handleAgentReset(currentMode.slug, "whenToUse")
-											}
-										}}
-										data-testid="when-to-use-reset">
-										<span className="codicon codicon-discard"></span>
-									</Button>
-								</StandardTooltip>
-							)}
-						</div>
-						<div className="text-sm text-vscode-descriptionForeground mb-2">
-							{t("prompts:whenToUse.description")}
-						</div>
-						<VSCodeTextArea
-							resize="vertical"
-							value={(() => {
-								const customMode = findModeBySlug(visualMode, customModes)
-								const prompt = customModePrompts?.[visualMode] as PromptComponent
-								return customMode?.whenToUse ?? prompt?.whenToUse ?? getWhenToUse(visualMode)
-							})()}
-							onChange={(e) => {
-								const value =
-									(e as unknown as CustomEvent)?.detail?.target?.value ||
-									((e as any).target as HTMLTextAreaElement).value
-								const customMode = findModeBySlug(visualMode, customModes)
-								if (customMode) {
-									// For custom modes, update the JSON file
-									updateCustomMode(visualMode, {
-										...customMode,
-										whenToUse: value.trim() || undefined,
-										source: customMode.source || "global",
-									})
-								} else {
-									// For built-in modes, update the prompts
-									updateAgentPrompt(visualMode, {
-										whenToUse: value.trim() || undefined,
-									})
-								}
-							}}
-							className="w-full"
-							rows={4}
-							data-testid={`${getCurrentMode()?.slug || "code"}-when-to-use-textarea`}
-						/>
-					</div>
+
+
+
 
 					{/* Mode settings */}
 					<>
@@ -1067,99 +942,7 @@ const ModesView = ({ onDone }: ModesViewProps) => {
 						</div>
 					</>
 
-					{/* Role definition for both built-in and custom modes */}
-					<div className="mb-2">
-						<div className="flex justify-between items-center mb-1">
-							<div className="font-bold">{t("prompts:customInstructions.title")}</div>
-							{!findModeBySlug(visualMode, customModes) && (
-								<StandardTooltip content={t("prompts:customInstructions.resetToDefault")}>
-									<Button
-										variant="ghost"
-										size="icon"
-										onClick={() => {
-											const currentMode = getCurrentMode()
-											if (currentMode?.slug) {
-												handleAgentReset(currentMode.slug, "customInstructions")
-											}
-										}}
-										data-testid="custom-instructions-reset">
-										<span className="codicon codicon-discard"></span>
-									</Button>
-								</StandardTooltip>
-							)}
-						</div>
-						<div className="text-[13px] text-vscode-descriptionForeground mb-2">
-							{t("prompts:customInstructions.description", {
-								modeName: getCurrentMode()?.name || "Code",
-							})}
-						</div>
-						<VSCodeTextArea
-							resize="vertical"
-							value={(() => {
-								const customMode = findModeBySlug(visualMode, customModes)
-								const prompt = customModePrompts?.[visualMode] as PromptComponent
-								return (
-									customMode?.customInstructions ??
-									prompt?.customInstructions ??
-									getCustomInstructions(mode, customModes)
-								)
-							})()}
-							onChange={(e) => {
-								const value =
-									(e as unknown as CustomEvent)?.detail?.target?.value ||
-									((e as any).target as HTMLTextAreaElement).value
-								const customMode = findModeBySlug(visualMode, customModes)
-								if (customMode) {
-									// For custom modes, update the JSON file
-									updateCustomMode(visualMode, {
-										...customMode,
-										customInstructions: value.trim() || undefined,
-										source: customMode.source || "global",
-									})
-								} else {
-									// For built-in modes, update the prompts
-									const existingPrompt = customModePrompts?.[visualMode] as PromptComponent
-									updateAgentPrompt(visualMode, {
-										...existingPrompt,
-										customInstructions: value.trim(),
-									})
-								}
-							}}
-							rows={10}
-							className="w-full"
-							data-testid={`${getCurrentMode()?.slug || "code"}-custom-instructions-textarea`}
-						/>
-						<div className="text-xs text-vscode-descriptionForeground mt-1.5">
-							<Trans
-								i18nKey="prompts:customInstructions.loadFromFile"
-								values={{
-									mode: getCurrentMode()?.name || "Code",
-									slug: getCurrentMode()?.slug || "code",
-								}}
-								components={{
-									span: (
-										<span
-											className="text-vscode-textLink-foreground cursor-pointer underline"
-											onClick={() => {
-												const currentMode = getCurrentMode()
-												if (!currentMode) return
 
-												// Open or create an empty file
-												vscode.postMessage({
-													type: "openFile",
-													text: `./.roo/rules-${currentMode.slug}/rules.md`,
-													values: {
-														create: true,
-														content: "",
-													},
-												})
-											}}
-										/>
-									),
-								}}
-							/>
-						</div>
-					</div>
 				</div>
 
 				<div className="pb-4 border-b border-vscode-input-border">
@@ -1202,7 +985,7 @@ const ModesView = ({ onDone }: ModesViewProps) => {
 						{/* Export button - visible when any mode is selected */}
 						{getCurrentMode() && (
 							<Button
-								variant="default"
+								variant="secondary"
 								onClick={() => {
 									const currentMode = getCurrentMode()
 									if (currentMode?.slug && !isExporting) {
@@ -1220,9 +1003,24 @@ const ModesView = ({ onDone }: ModesViewProps) => {
 								{isExporting ? t("prompts:exportMode.exporting") : t("prompts:exportMode.title")}
 							</Button>
 						)}
-						{/* Import button - always visible */}
+						
+						{/* Export All Role Rules button - always visible */}
 						<Button
 							variant="default"
+							onClick={() => {
+								vscode.postMessage({
+									type: "exportAllRoleRules",
+								})
+							}}
+							title={t("prompts:exportAllRoleRules.title")}
+							data-testid="export-all-role-rules-button">
+							<Download className="h-4 w-4" />
+							{t("prompts:exportAllRoleRules.title")}
+						</Button>
+						
+						{/* Import button - always visible */}
+						<Button
+							variant="secondary"
 							onClick={() => setShowImportDialog(true)}
 							disabled={isImporting}
 							title={t("prompts:modes.importMode")}

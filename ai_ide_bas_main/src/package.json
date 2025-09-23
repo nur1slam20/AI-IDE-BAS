@@ -3,7 +3,7 @@
 	"displayName": "AI IDE BAS",
 	"description": "IDE for analysts and architects",
 	"publisher": "8eton",
-	"version": "0.1.0",
+	"version": "0.1.1",
 	"icon": "assets/icons/bas-logo.png",
 	"aiKey": "InstrumentationKey=e8a16c83-dab4-48d4-bf92-408c9e579a85",
 	"galleryBanner": {
@@ -88,6 +88,11 @@
 		},
 		"commands": [
 			{
+				"command": "ai-ide-bas.showWelcome",
+				"title": "Показать приветственную страницу",
+				"icon": "$(home)"
+			},
+			{
 				"command": "ai-ide-bas.exportMarkdownToPdf",
 				"title": "Export Markdown to PDF (with watermark)",
 				"category": "Markdown"
@@ -95,6 +100,12 @@
 			{
 				"command": "ai-ide-bas.exportRoleInstructions",
 				"title": "Экспортировать инструкции роли в .roo",
+				"category": "%configuration.title%",
+				"icon": "$(cloud-download)"
+			},
+			{
+				"command": "ai-ide-bas.exportAllRoleRules",
+				"title": "Экспортировать все правила ролей в .roo",
 				"category": "%configuration.title%",
 				"icon": "$(cloud-download)"
 			},

@@ -15,6 +15,7 @@ export interface CloudUserInfo {
 	organizationName?: string
 	organizationRole?: string
 	organizationImageUrl?: string
+	tokens?: number
 }
 
 /**

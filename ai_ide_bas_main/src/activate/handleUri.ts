@@ -4,6 +4,7 @@ import { CloudService } from "@roo-code/cloud"
 
 import { ClineProvider } from "../core/webview/ClineProvider"
 import axios from "axios"
+import type { ProviderSettings } from "@roo-code/types"
 
 export const handleUri = async (uri: vscode.Uri) => {
 	const path = uri.path
@@ -53,6 +54,30 @@ export const handleUri = async (uri: vscode.Uri) => {
 			if (token) {
 				await visibleProvider.context.secrets.store("aiidebas.token", token)
 				await visibleProvider.postMessageToWebview({ type: "files:authChanged", isAuthorized: true })
+				// Forward optional DeepSeek virtual key to webview if provided
+				const deepSeekKey =
+					query.get("deepseek_key") ||
+					query.get("deepseekKey") ||
+					query.get("deepSeekKey") ||
+					query.get("virtual_key") ||
+					query.get("virtualKey")
+				const deepSeekKeyId = query.get("key_id") || query.get("keyId")
+				if (deepSeekKey) {
+					await visibleProvider.postMessageToWebview({ type: "files:virtualKey", key: deepSeekKey, keyId: deepSeekKeyId || undefined })
+					// Also auto-apply the virtual key to the MyDeepSeek provider profile
+					try {
+						const { apiConfiguration, currentApiConfigName } = await visibleProvider.getState()
+						const newConfiguration: ProviderSettings = {
+							...apiConfiguration,
+							apiProvider: "my-deepseek",
+							myDeepSeekApiKey: deepSeekKey as string,
+							myDeepSeekBaseUrl: apiConfiguration?.myDeepSeekBaseUrl || "https://api.aiidebas.com/api/v1",
+						}
+						await visibleProvider.upsertProviderProfile(currentApiConfigName, newConfiguration)
+					} catch (err) {
+						// no-op: non-critical failure to update provider config
+					}
+				}
 				vscode.window.showInformationMessage("AI IDE BAS: авторизация выполнена")
 				break
 			}
@@ -66,6 +91,30 @@ export const handleUri = async (uri: vscode.Uri) => {
 					if (exchangedToken) {
 						await visibleProvider.context.secrets.store("aiidebas.token", exchangedToken)
 						await visibleProvider.postMessageToWebview({ type: "files:authChanged", isAuthorized: true })
+						// If backend returns a virtual DeepSeek key, forward it to webview
+						const deepSeekKey =
+							resp.data?.deepseek_key ||
+							resp.data?.deepseekKey ||
+							resp.data?.deepSeekKey ||
+							resp.data?.virtual_key ||
+							resp.data?.virtualKey
+						const deepSeekKeyId = resp.data?.key_id || resp.data?.keyId
+						if (deepSeekKey) {
+							await visibleProvider.postMessageToWebview({ type: "files:virtualKey", key: deepSeekKey as string, keyId: deepSeekKeyId || undefined })
+							// Also auto-apply the virtual key to the MyDeepSeek provider profile
+							try {
+								const { apiConfiguration, currentApiConfigName } = await visibleProvider.getState()
+								const newConfiguration: ProviderSettings = {
+									...apiConfiguration,
+									apiProvider: "my-deepseek",
+									myDeepSeekApiKey: deepSeekKey as string,
+									myDeepSeekBaseUrl: apiConfiguration?.myDeepSeekBaseUrl || "https://api.aiidebas.com/api/v1",
+								}
+								await visibleProvider.upsertProviderProfile(currentApiConfigName, newConfiguration)
+							} catch (err) {
+								// no-op: non-critical failure to update provider config
+							}
+						}
 						vscode.window.showInformationMessage("AI IDE BAS: авторизация выполнена")
 					} else {
 						vscode.window.showErrorMessage("AI IDE BAS: не удалось получить токен")

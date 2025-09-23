@@ -120,7 +120,11 @@ export interface ExtensionMessage {
 		| "showEditMessageDialog"
 		| "commands"
 		| "insertTextIntoTextarea"
+		| "files:authChanged"
+		| "files:virtualKey"
+		| "files:notice"
 	text?: string
+	isAuthorized?: boolean
 	payload?: any // Add a generic payload for now, can refine later
 	action?:
 		| "chatButtonClicked"
@@ -174,6 +178,8 @@ export interface ExtensionMessage {
 	slug?: string
 	success?: boolean
 	values?: Record<string, any>
+	key?: string
+	keyId?: string
 	requestId?: string
 	promptText?: string
 	results?: { path: string; type: "file" | "folder"; label?: string }[]

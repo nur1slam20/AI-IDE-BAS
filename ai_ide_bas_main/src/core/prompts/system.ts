@@ -12,6 +12,7 @@ import { isEmpty } from "../../utils/object"
 
 import { McpHub } from "../../services/mcp/McpHub"
 import { CodeIndexManager } from "../../services/code-index/manager"
+import { loadBuiltInModeRules } from "../../services/builtin-rules"
 
 import { PromptVariables, loadSystemPromptFile } from "./sections/custom-system-prompt"
 
@@ -164,6 +165,7 @@ ${await addCustomInstructions(effectiveBaseInstructions, globalCustomInstruction
 		language: language ?? formatLanguage(vscode.env.language),
 		rooIgnoreInstructions,
 		settings,
+		loadBuiltInModeRules,
 	})}`
 
 	return basePrompt
@@ -226,6 +228,7 @@ export const SYSTEM_PROMPT = async (
 				language: language ?? formatLanguage(vscode.env.language),
 				rooIgnoreInstructions,
 				settings,
+				loadBuiltInModeRules,
 			},
 		)
 

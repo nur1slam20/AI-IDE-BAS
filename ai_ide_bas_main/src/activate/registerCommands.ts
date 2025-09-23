@@ -19,6 +19,7 @@ import { t } from "../i18n"
 import { exportMarkdownToPdf } from "../integrations/misc/export-markdown-to-pdf"
 import * as path from "path"
 import * as fs from "fs/promises"
+import { loadModeInfo } from "../services/mode-info-loader"
 
 /**
  * Helper to get the visible ClineProvider instance or log if not found.
@@ -142,6 +143,18 @@ const getCommandsMap = ({ context, outputChannel, provider }: RegisterCommandOpt
 		// Also explicitly post the visibility message to trigger scroll reliably
 		visibleProvider.postMessageToWebview({ type: "action", action: "didBecomeVisible" })
 	},
+	showWelcome: () => {
+		const visibleProvider = getVisibleProviderOrLog(outputChannel)
+
+		if (!visibleProvider) {
+			return
+		}
+
+		// Navigate explicitly to the Welcome tab by sending an action the App understands
+		visibleProvider.postMessageToWebview({ type: "action", action: "switchTab", tab: "settings" })
+		// And target the providers section to mimic welcome configuration area
+		visibleProvider.postMessageToWebview({ type: "action", action: "settingsButtonClicked" })
+	},
 	historyButtonClicked: () => {
 		const visibleProvider = getVisibleProviderOrLog(outputChannel)
 
@@ -214,6 +227,88 @@ const getCommandsMap = ({ context, outputChannel, provider }: RegisterCommandOpt
 			vscode.window.showInformationMessage("Папка dist/prompts экспортирована в корень проекта как 'prompts'") 
 		} catch (error) {
 			vscode.window.showErrorMessage(`Не удалось экспортировать инструкции: ${error instanceof Error ? error.message : String(error)}`)
+		}
+	},
+	exportAllRoleRules: async () => {
+		try {
+			const visibleProvider = getVisibleProviderOrLog(outputChannel)
+			if (!visibleProvider) return
+
+			const workspaceRoot = visibleProvider.cwd || (await import("../utils/path")).getWorkspacePath()
+			if (!workspaceRoot) {
+				vscode.window.showErrorMessage("Нет открытой рабочей папки")
+				return
+			}
+
+			// Source: extension's built-in rules folders (copied during build to dist/prompts)
+			const srcPromptsUri = vscode.Uri.joinPath(context.extensionUri, "dist", "prompts")
+			let srcStats: any
+			try {
+				srcStats = await fs.stat(srcPromptsUri.fsPath)
+				if (!srcStats.isDirectory()) throw new Error("Папка prompts не найдена")
+			} catch (e) {
+				vscode.window.showErrorMessage(`Папка prompts не найдена по пути: ${srcPromptsUri.fsPath}`)
+				return
+			}
+
+			// Target: workspace .roo directory
+			const dstRooDir = path.join(workspaceRoot, ".roo")
+			await fs.mkdir(dstRooDir, { recursive: true })
+
+			// Copy only rules-* directories from prompts to .roo
+			const entries = await fs.readdir(srcPromptsUri.fsPath, { withFileTypes: true })
+			const rulesDirs = entries.filter(entry => entry.isDirectory() && entry.name.startsWith("rules-"))
+			
+			if (rulesDirs.length === 0) {
+				vscode.window.showErrorMessage("Не найдены папки с правилами ролей (rules-*)")
+				return
+			}
+
+			// Recursive copy function
+			const copyRecursive = async (src: string, dst: string) => {
+				const dirEntries = await fs.readdir(src, { withFileTypes: true })
+				for (const entry of dirEntries) {
+					const srcPath = path.join(src, entry.name)
+					const dstPath = path.join(dst, entry.name)
+					if (entry.isDirectory()) {
+						await fs.mkdir(dstPath, { recursive: true })
+						await copyRecursive(srcPath, dstPath)
+					} else if (entry.isFile()) {
+						await fs.copyFile(srcPath, dstPath)
+					}
+				}
+			}
+
+			// Copy each rules-* directory
+			for (const rulesDir of rulesDirs) {
+				const srcRulesPath = path.join(srcPromptsUri.fsPath, rulesDir.name)
+				const dstRulesPath = path.join(dstRooDir, rulesDir.name)
+				await fs.mkdir(dstRulesPath, { recursive: true })
+				await copyRecursive(srcRulesPath, dstRulesPath)
+			}
+
+			vscode.window.showInformationMessage(`Экспортировано ${rulesDirs.length} папок с правилами ролей в .roo папку проекта`) 
+		} catch (error) {
+			vscode.window.showErrorMessage(`Не удалось экспортировать правила ролей: ${error instanceof Error ? error.message : String(error)}`)
+		}
+	},
+	loadModeInfo: async (modeSlug: string) => {
+		try {
+			const visibleProvider = getVisibleProviderOrLog(outputChannel)
+			if (!visibleProvider) return null
+
+			const workspaceRoot = visibleProvider.cwd || (await import("../utils/path")).getWorkspacePath()
+			
+			const modeInfo = await loadModeInfo(modeSlug, {
+				cwd: workspaceRoot,
+				customModes: visibleProvider.customModes,
+				builtInMode: (await import("../shared/modes")).modes.find(m => m.slug === modeSlug)
+			})
+
+			return modeInfo
+		} catch (error) {
+			console.error(`Failed to load mode info for ${modeSlug}:`, error)
+			return null
 		}
 	},
 	showHumanRelayDialog: (params: { requestId: string; promptText: string }) => {

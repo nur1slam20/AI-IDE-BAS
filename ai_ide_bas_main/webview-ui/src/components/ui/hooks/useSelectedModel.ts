@@ -174,6 +174,11 @@ function getSelectedModel({
 			const info = deepSeekModels[id as keyof typeof deepSeekModels]
 			return { id, info }
 		}
+		case "my-deepseek": {
+			const id = apiConfiguration.apiModelId ?? deepSeekDefaultModelId
+			const info = deepSeekModels[id as keyof typeof deepSeekModels]
+			return { id, info }
+		}
 		case "moonshot": {
 			const id = apiConfiguration.apiModelId ?? moonshotDefaultModelId
 			const info = moonshotModels[id as keyof typeof moonshotModels]

@@ -727,6 +727,16 @@ export const webviewMessageHandler = async (
 			await provider.postMessageToWebview({ type: "files:authChanged", isAuthorized: false })
 			break
 		}
+		case "files:me": {
+			try {
+				const client = new AiIdeBasFilesClient(provider.context)
+				const me = await client.getMe().catch(() => null)
+				await provider.postMessageToWebview({ type: "files:me:result", me })
+			} catch {
+				await provider.postMessageToWebview({ type: "files:me:result", me: null })
+			}
+			break
+		}
 		case "files:list": {
 			const client = new AiIdeBasFilesClient(provider.context)
 			try {
@@ -779,6 +789,22 @@ export const webviewMessageHandler = async (
 				await client.downloadFile(id, dest.fsPath)
 			} catch (error) {
 				await provider.postMessageToWebview({ type: "files:error", error: (error as Error).message })
+			}
+			break
+		}
+		case "files:share": {
+			const client = new AiIdeBasFilesClient(provider.context)
+			try {
+				const projectName: string = message.values?.projectName
+				const visibility = (message.values?.visibility ?? "public") as "private" | "public" | "org"
+				const { url } = await client.shareProject(projectName, visibility)
+				await provider.postMessageToWebview({ type: "files:notice", text: "Ссылка проекта создана" })
+				await provider.postMessageToWebview({ type: "openExternal", url })
+			} catch (error) {
+				const anyErr = error as any
+				const detail = anyErr?.response?.data?.detail || (anyErr?.message ?? String(anyErr))
+				const status = anyErr?.response?.status
+				await provider.postMessageToWebview({ type: "files:error", error: detail, values: { status } })
 			}
 			break
 		}
@@ -1904,6 +1930,39 @@ export const webviewMessageHandler = async (
 						slug: message.slug,
 					})
 				}
+			}
+			break
+		case "exportAllRoleRules":
+			try {
+				// Execute the exportAllRoleRules command via vscode commands
+				await vscode.commands.executeCommand("ai-ide-bas.exportAllRoleRules")
+			} catch (error) {
+				const errorMessage = error instanceof Error ? error.message : String(error)
+				provider.log(`Failed to export all role rules: ${errorMessage}`)
+				vscode.window.showErrorMessage(`Не удалось экспортировать правила ролей: ${errorMessage}`)
+			}
+			break
+		case "loadModeInfo":
+			try {
+				const { modeSlug } = message as any
+				if (!modeSlug) {
+					throw new Error("Mode slug is required")
+				}
+				const modeInfo = await vscode.commands.executeCommand("ai-ide-bas.loadModeInfo", modeSlug)
+				postMessageToWebview(provider, {
+					type: "loadModeInfoResult",
+					modeSlug,
+					modeInfo,
+				})
+			} catch (error) {
+				const errorMessage = error instanceof Error ? error.message : String(error)
+				provider.log(`Failed to load mode info: ${errorMessage}`)
+				postMessageToWebview(provider, {
+					type: "loadModeInfoResult",
+					modeSlug: (message as any).modeSlug,
+					modeInfo: null,
+					error: errorMessage,
+				})
 			}
 			break
 		case "importMode":

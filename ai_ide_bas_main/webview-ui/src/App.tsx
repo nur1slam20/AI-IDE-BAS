@@ -23,7 +23,6 @@ import { HumanRelayDialog } from "./components/human-relay/HumanRelayDialog"
 import { DeleteMessageDialog, EditMessageDialog } from "./components/chat/MessageModificationConfirmationDialog"
 import ErrorBoundary from "./components/ErrorBoundary"
 import { AccountView } from "./components/account/AccountView"
-import { useAddNonInteractiveClickListener } from "./components/ui/hooks/useNonInteractiveClick"
 import { TooltipProvider } from "./components/ui/tooltip"
 import { STANDARD_TOOLTIP_DELAY } from "./components/ui/standard-tooltip"
 
@@ -74,7 +73,7 @@ const App = () => {
 		cloudUserInfo,
 		cloudIsAuthenticated,
 		cloudApiUrl,
-		renderContext,
+		// renderContext,
 		mdmCompliant,
 	} = useExtensionState()
 
@@ -213,14 +212,7 @@ const App = () => {
 	}, [])
 
 	// Focus the WebView when non-interactive content is clicked (only in editor/tab mode)
-	useAddNonInteractiveClickListener(
-		useCallback(() => {
-			// Only send focus request if we're in editor (tab) mode, not sidebar
-			if (renderContext === "editor") {
-				vscode.postMessage({ type: "focusPanelRequest" })
-			}
-		}, [renderContext]),
-	)
+/* Removed global non-interactive click focus handler to avoid click interference on Windows */
 	// Track marketplace tab views
 	useEffect(() => {
 		if (tab === "marketplace") {

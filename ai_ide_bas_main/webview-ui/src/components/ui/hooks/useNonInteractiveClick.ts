@@ -8,20 +8,38 @@ import { useEffect } from "react"
  *
  * @param handler - Function to call when a non-interactive element is clicked
  */
-export function useAddNonInteractiveClickListener(handler: () => void) {
+export function useAddNonInteractiveClickListener(handler: () => void, enabled: boolean = true) {
 	useEffect(() => {
+		if (!enabled) return
+
 		const handleContentClick = (e: MouseEvent) => {
 			const target = e.target as HTMLElement
 
-			// Don't trigger for input elements to avoid disrupting typing
-			if (
-				target.tagName !== "INPUT" &&
-				target.tagName !== "SELECT" &&
-				target.tagName !== "TEXTAREA" &&
-				target.tagName !== "VSCODE-TEXT-AREA" &&
-				target.tagName !== "VSCODE-TEXT-FIELD" &&
-				!target.isContentEditable
-			) {
+			// Treat native and custom toolkit interactive elements as interactive
+			const interactiveSelector = [
+				"button",
+				"a",
+				"input",
+				"select",
+				"textarea",
+				"[role=button]",
+				"[role=link]",
+				"[role=menuitem]",
+				"[role=tab]",
+				"[role=listbox]",
+				"[role=option]",
+				"vscode-button",
+				"vscode-link",
+				"vscode-text-area",
+				"vscode-text-field",
+				"vscode-dropdown",
+			].join(",")
+
+			const isInteractive =
+				target.isContentEditable ||
+				target.closest(interactiveSelector) !== null
+
+			if (!isInteractive) {
 				handler()
 			}
 		}
@@ -32,5 +50,5 @@ export function useAddNonInteractiveClickListener(handler: () => void) {
 		return () => {
 			document.body.removeEventListener("click", handleContentClick)
 		}
-	}, [handler])
+	}, [handler, enabled])
 }
