@@ -14,8 +14,6 @@ getHighlighter().catch((error: Error) => console.error("Failed to initialize Shi
 
 createRoot(document.getElementById("root")!).render(
     <StrictMode>
-      <AIIDEStateProvider>
-        <AIIDEApp />
-      </AIIDEStateProvider>
+      <App />
     </StrictMode>,
   )

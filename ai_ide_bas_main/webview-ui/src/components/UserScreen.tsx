@@ -142,7 +142,7 @@ export const UserScreen: React.FC<UserScreenProps> = ({
         isOpen={showInvite} 
         onClose={() => setShowInvite(false)}
         inviteLink="https://aiidebas.com/invite/abc123"
-        onCopy={copyInviteLink}
+        onCopy={(link) => copyInviteLink(link)}
       />
     </div>
   )

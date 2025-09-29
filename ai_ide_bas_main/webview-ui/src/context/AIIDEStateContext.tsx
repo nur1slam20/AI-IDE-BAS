@@ -35,7 +35,7 @@ interface AIIDEStateContextType {
   signInWithGoogle: () => void
   signOut: () => void
   inviteFriend: () => void
-  copyInviteLink: (link: string) => void
+  copyInviteLink: (link: string | undefined) => void
   openSettings: () => void
   
   // Error state
@@ -94,8 +94,10 @@ export const AIIDEStateProvider: React.FC<AIIDEStateProviderProps> = ({ children
     // Логика приглашения
   }, [])
 
-  const copyInviteLink = useCallback((link: string) => {
-    navigator.clipboard.writeText(link)
+  const copyInviteLink = useCallback((link: string | undefined) => {
+    if (link) {
+      navigator.clipboard.writeText(link)
+    }
   }, [])
 
   const openSettings = useCallback(() => {
