@@ -45,7 +45,7 @@ const AIIDEView: React.FC = () => {
           bonusTokens={userInfo.bonusTokens}
           invitedCount={userInfo.invitedCount}
           onInvite={inviteFriend}
-          onCollaborate={() => console.log("Collaborate clicked")}
+          onCollaborate={() => {}}
           onLogout={signOut}
         />
       )

@@ -71,10 +71,6 @@ export const AIIDEStateProvider: React.FC<AIIDEStateProviderProps> = ({ children
   const [tokensError, setTokensError] = useState<{ requiredTokens: number; userTokens: number } | null>(null)
 
   const signInWithGoogle = useCallback(() => {
-    // Заглушка для авторизации через Google
-    console.log("Signing in with Google...")
-    
-    // Имитируем успешную авторизацию
     const mockUser: UserInfo = {
       id: "1",
       name: "AI IDE BAS",
@@ -95,21 +91,15 @@ export const AIIDEStateProvider: React.FC<AIIDEStateProviderProps> = ({ children
   }, [])
 
   const inviteFriend = useCallback(() => {
-    console.log("Inviting friend...")
-    // Здесь будет логика приглашения
+    // Логика приглашения
   }, [])
 
   const copyInviteLink = useCallback((link: string) => {
-    navigator.clipboard.writeText(link).then(() => {
-      console.log("Invite link copied to clipboard")
-    }).catch((err) => {
-      console.error("Failed to copy invite link:", err)
-    })
+    navigator.clipboard.writeText(link)
   }, [])
 
   const openSettings = useCallback(() => {
-    console.log("Opening settings...")
-    // Здесь будет логика открытия настроек
+    // Логика открытия настроек
   }, [])
 
   const value: AIIDEStateContextType = {

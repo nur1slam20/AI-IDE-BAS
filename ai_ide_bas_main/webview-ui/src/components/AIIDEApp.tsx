@@ -16,9 +16,6 @@ export const AIIDEApp: React.FC = () => {
   ]
 
   const onGoogleSignIn = () => {
-    // заглушка для авторизации
-    // eslint-disable-next-line no-console
-    console.log("Sign in with Google clicked")
     setScreen("user")
   }
 
