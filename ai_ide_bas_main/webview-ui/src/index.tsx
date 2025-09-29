@@ -3,6 +3,7 @@ import { createRoot } from "react-dom/client"
 
 import "./index.css"
 import App from "./App"
+import AIIDEApp from "./components/AIIDEApp"
 import "../node_modules/@vscode/codicons/dist/codicon.css"
 
 import { getHighlighter } from "./utils/highlighter"
@@ -11,7 +12,9 @@ import { getHighlighter } from "./utils/highlighter"
 getHighlighter().catch((error: Error) => console.error("Failed to initialize Shiki highlighter:", error))
 
 createRoot(document.getElementById("root")!).render(
-	<StrictMode>
-		<App />
-	</StrictMode>,
-)
+    <StrictMode>
+      {/* Toggle below to preview new AI IDE BAS screens locally. */}
+      <AIIDEApp />
+      {/* <App /> */}
+    </StrictMode>,
+  )
