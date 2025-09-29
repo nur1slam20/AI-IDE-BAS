@@ -25,8 +25,10 @@ import ErrorBoundary from "./components/ErrorBoundary"
 import { AccountView } from "./components/account/AccountView"
 import { TooltipProvider } from "./components/ui/tooltip"
 import { STANDARD_TOOLTIP_DELAY } from "./components/ui/standard-tooltip"
+import AIIDEView from "./components/AIIDEView"
+import { AIIDEStateProvider } from "./context/AIIDEStateContext"
 
-type Tab = "settings" | "history" | "mcp" | "modes" | "chat" | "marketplace" | "account" | "files"
+type Tab = "settings" | "history" | "mcp" | "modes" | "chat" | "marketplace" | "account" | "files" | "aiide"
 
 interface HumanRelayDialogState {
 	isOpen: boolean
@@ -252,6 +254,7 @@ const App = () => {
 					onDone={() => switchTab("chat")}
 				/>
 			)}
+			{tab === "aiide" && <AIIDEView />}
 			<ChatView
 				ref={chatViewRef}
 				isHidden={tab !== "chat"}
@@ -302,7 +305,9 @@ const AppWithProviders = () => (
 			<TranslationProvider>
 				<QueryClientProvider client={queryClient}>
 					<TooltipProvider delayDuration={STANDARD_TOOLTIP_DELAY}>
-						<App />
+						<AIIDEStateProvider>
+							<App />
+						</AIIDEStateProvider>
 					</TooltipProvider>
 				</QueryClientProvider>
 			</TranslationProvider>

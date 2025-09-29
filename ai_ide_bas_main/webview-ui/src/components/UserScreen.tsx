@@ -1,5 +1,6 @@
 import React from "react"
 import InviteModal from "./InviteModal"
+import { useAIIDEState } from "../context/AIIDEStateContext"
 
 export interface UserScreenProps {
   userName?: string
@@ -24,6 +25,7 @@ export const UserScreen: React.FC<UserScreenProps> = ({
   onLogout,
 }) => {
   const [showInvite, setShowInvite] = React.useState(false)
+  const { copyInviteLink } = useAIIDEState()
 
   return (
     <div className="h-full w-full overflow-auto bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800">
@@ -136,7 +138,12 @@ export const UserScreen: React.FC<UserScreenProps> = ({
         </div>
       </div>
 
-      <InviteModal isOpen={showInvite} onClose={() => setShowInvite(false)} />
+      <InviteModal 
+        isOpen={showInvite} 
+        onClose={() => setShowInvite(false)}
+        inviteLink="https://aiidebas.com/invite/abc123"
+        onCopy={copyInviteLink}
+      />
     </div>
   )
 }

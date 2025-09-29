@@ -14,7 +14,7 @@ getHighlighter().catch((error: Error) => console.error("Failed to initialize Shi
 createRoot(document.getElementById("root")!).render(
     <StrictMode>
       {/* Toggle below to preview new AI IDE BAS screens locally. */}
-      <AIIDEApp />
-      {/* <App /> */}
+      {/* <AIIDEApp /> */}
+      <App />
     </StrictMode>,
   )
