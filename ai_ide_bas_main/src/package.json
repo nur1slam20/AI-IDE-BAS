@@ -93,6 +93,11 @@
 				"icon": "$(home)"
 			},
 			{
+				"command": "ai-ide-bas.openAIIDE",
+				"title": "Открыть AI IDE BAS",
+				"icon": "$(robot)"
+			},
+			{
 				"command": "ai-ide-bas.exportMarkdownToPdf",
 				"title": "Export Markdown to PDF (with watermark)",
 				"category": "Markdown"
@@ -221,6 +226,12 @@
 			}
 		],
 		"menus": {
+			"commandPalette": [
+				{
+					"command": "ai-ide-bas.openAIIDE",
+					"title": "AI IDE BAS: Открыть AI IDE BAS"
+				}
+			],
 			"editor/context": [
 				{
 					"submenu": "ai-ide-bas.contextMenu",
