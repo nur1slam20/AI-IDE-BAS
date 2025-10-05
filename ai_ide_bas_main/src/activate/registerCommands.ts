@@ -182,6 +182,17 @@ const getCommandsMap = ({ context, outputChannel, provider }: RegisterCommandOpt
 
 		visibleProvider.postMessageToWebview({ type: "action", action: "filesButtonClicked" })
 	},
+	aiideButtonClicked: () => {
+		const visibleProvider = getVisibleProviderOrLog(outputChannel)
+
+		if (!visibleProvider) {
+			return
+		}
+
+		TelemetryService.instance.captureTitleButtonClicked("aiide")
+
+		visibleProvider.postMessageToWebview({ type: "action", action: "aiideButtonClicked" })
+	},
 	exportRoleInstructions: async () => {
 		try {
 			const visibleProvider = getVisibleProviderOrLog(outputChannel)
@@ -453,64 +464,8 @@ export const openClineInNewTab = async ({ context, outputChannel }: Omit<Registe
 	return tabProvider
 }
 
-export function registerCommands({ context, outputChannel, provider }: {
-	context: vscode.ExtensionContext
-	outputChannel: vscode.OutputChannel
-	provider: ClineProvider
-}) {
-	// Register AI IDE BAS command
-	context.subscriptions.push(
-		vscode.commands.registerCommand("ai-ide-bas.openAIIDE", async () => {
-			// Create a new webview panel for AI IDE BAS
-			const panel = vscode.window.createWebviewPanel(
-				"aiidebas",
-				"AI IDE BAS",
-				vscode.ViewColumn.One,
-				{
-					enableScripts: true,
-					retainContextWhenHidden: true,
-					localResourceRoots: [context.extensionUri],
-				}
-			)
+// AI IDE BAS is now integrated into the main extension interface
+// No need for separate command - use aiideButtonClicked instead
 
-			// Set the HTML content
-			panel.webview.html = getWebviewContent(context.extensionUri, panel.webview)
-		})
-	)
-}
-
-function getWebviewContent(extensionUri: vscode.Uri, webview: vscode.Webview): string {
-	// Get the local path to main script run in the webview,
-	// then convert it to a uri we can use in the webview.
-	const scriptUri = vscode.Uri.joinPath(extensionUri, "webview-ui", "build", "assets", "index.js")
-	const stylesUri = vscode.Uri.joinPath(extensionUri, "webview-ui", "build", "assets", "index.css")
-
-	// Use a nonce to only allow a specific script to be run.
-	const nonce = getNonce()
-
-	return /*html*/ `
-		<!DOCTYPE html>
-		<html lang="en">
-		<head>
-			<meta charset="UTF-8">
-			<meta name="viewport" content="width=device-width, initial-scale=1.0">
-			<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src ${webview.cspSource} 'unsafe-inline'; script-src 'nonce-${nonce}';">
-			<link href="${stylesUri}" rel="stylesheet">
-			<title>AI IDE BAS</title>
-		</head>
-		<body>
-			<div id="root"></div>
-			<script nonce="${nonce}" src="${scriptUri}"></script>
-		</body>
-		</html>
-	`
-}
-
-function getNonce() {
-	let text = ''
-	const possible = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
-	for (let i = 0; i < 32; i++) {
-		text += possible.charAt(Math.floor(Math.random() * possible.length))
-	}
-	return text
-}
+// Removed unused getWebviewContent and getNonce functions
+// AI IDE BAS now uses the main extension webview

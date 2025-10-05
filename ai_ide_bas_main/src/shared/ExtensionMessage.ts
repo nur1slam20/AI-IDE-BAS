@@ -135,6 +135,7 @@ export interface ExtensionMessage {
 		| "marketplaceButtonClicked"
 		| "accountButtonClicked"
 		| "filesButtonClicked"
+		| "aiideButtonClicked"
 		| "didBecomeVisible"
 		| "focusInput"
 		| "switchTab"

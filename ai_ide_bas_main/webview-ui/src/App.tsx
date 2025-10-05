@@ -62,6 +62,7 @@ const tabsByMessageAction: Partial<Record<NonNullable<ExtensionMessage["action"]
 	marketplaceButtonClicked: "marketplace",
 	accountButtonClicked: "account",
 	filesButtonClicked: "files",
+	aiideButtonClicked: "aiide",
 }
 
 const App = () => {
